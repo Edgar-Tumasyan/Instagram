@@ -1,14 +1,14 @@
-require("dotenv").config();
-const Koa = require("koa");
+require('dotenv').config();
+const Koa = require('koa');
 const app = new Koa();
 
-const sequelize = require("./db/connectDB");
-const User = require("./models/user");
+const sequelize = require('./db/connectDB');
+const User = require('./models/user');
 
 const port = process.env.PORT || 3001;
 
-const Routes = require("./routes");
-const bodyParser = require("koa-bodyparser");
+const Routes = require('./routes');
+const bodyParser = require('koa-bodyparser');
 
 app.use(bodyParser());
 app.use(Routes.routes());
