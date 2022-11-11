@@ -1,13 +1,15 @@
-const User = require('../models/user');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const StatusCodes = require('http-status-codes');
 
-const register = async (ctx) => {
+const { User } = require('../data/models');
+
+const create = async (ctx) => {
   const { firstname, lastname, email, password } = ctx.request.body;
 
   if (!firstname || !lastname || !email || !password) {
     ctx.status = StatusCodes.BAD_REQUEST;
+
     return (ctx.body = 'Please provide all values');
   }
 
@@ -15,6 +17,7 @@ const register = async (ctx) => {
 
   if (existingEmail) {
     ctx.status = StatusCodes.BAD_REQUEST;
+
     return (ctx.body = `Email ${email} already exist`);
   }
 
@@ -38,6 +41,7 @@ const login = async (ctx) => {
 
   if (!email || !password) {
     ctx.status = StatusCodes.BAD_REQUEST;
+
     return (ctx.body = 'Please provide all values');
   }
 
@@ -45,6 +49,7 @@ const login = async (ctx) => {
 
   if (!user) {
     ctx.status = StatusCodes.BAD_REQUEST;
+
     return (ctx.body = 'Please provide correct email');
   }
 
@@ -52,6 +57,7 @@ const login = async (ctx) => {
 
   if (!correctPassword) {
     ctx.status = StatusCodes.BAD_REQUEST;
+
     return (ctx.body = 'Please provide correct password');
   }
 
@@ -67,7 +73,7 @@ const login = async (ctx) => {
   ctx.body = { data, token };
 };
 
-const getAllUsers = async (ctx) => {
+const findAll = async (ctx) => {
   const users = await User.findAll();
   const count = users.length;
 
@@ -75,11 +81,12 @@ const getAllUsers = async (ctx) => {
   ctx.body = { count, users };
 };
 
-const getUser = async (ctx) => {
+const findOne = async (ctx) => {
   const user = await User.findByPk(ctx.request.params.id);
 
   if (!user) {
     ctx.status = StatusCodes.BAD_REQUEST;
+
     return (ctx.body = `No user with id ${ctx.request.params.id}`);
   }
 
@@ -89,18 +96,19 @@ const getUser = async (ctx) => {
   ctx.body = { data };
 };
 
-const deleteUser = async (ctx) => {
+const remove = async (ctx) => {
   const user = await User.findByPk(ctx.request.params.id);
 
   if (!user) {
     ctx.status = StatusCodes.BAD_REQUEST;
+
     return (ctx.body = `No user with id ${ctx.request.params.id}`);
   }
 
   await User.destroy({ where: { id: ctx.request.params.id } });
 
   ctx.status = StatusCodes.OK;
-  ctx.body = { message: 'User deleted' };
+  ctx.body = { message: 'UserController deleted' };
 };
 
-module.exports = { register, login, getAllUsers, getUser, deleteUser };
+module.exports = { create, login, findAll, findOne, remove };

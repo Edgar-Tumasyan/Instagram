@@ -2,23 +2,24 @@ const Router = require('koa-router');
 
 const {
   create,
-  login,
   findAll,
   findOne,
+  update,
   remove,
-} = require('../controller/UserController');
+} = require('../controller/PostController');
 
 const { authenticateUser } = require('../middleware/auth');
 
 const router = new Router({
-  prefix: '/users',
+  prefix: '/posts',
 });
 
 router.get('/', authenticateUser, findAll);
 router.get('/:id', authenticateUser, findOne);
 
-router.post('/', create);
-router.post('/login', login);
+router.post('/', authenticateUser, create);
+
+router.put('/:id', authenticateUser, update);
 
 router.delete('/:id', authenticateUser, remove);
 
