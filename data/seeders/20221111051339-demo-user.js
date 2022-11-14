@@ -15,6 +15,7 @@ module.exports = {
       const role = 'user';
       const createdAt = new Date();
       const updatedAt = new Date();
+      const avatar = faker.internet.avatar()
 
       users.push({
         id,
@@ -25,6 +26,7 @@ module.exports = {
         role,
         createdAt,
         updatedAt,
+        avatar
       });
     }
 

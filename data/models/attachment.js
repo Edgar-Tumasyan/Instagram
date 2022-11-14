@@ -1,6 +1,6 @@
 const { DataTypes, Model } = require('sequelize');
 
-class Post extends Model {
+class Attachment extends Model {
   static init(sequelize) {
     return super.init(
       {
@@ -10,31 +10,31 @@ class Post extends Model {
           primaryKey: true,
           allowNull: false,
         },
-        title: {
-          type: DataTypes.STRING,
-          allowNull: false,
-        },
-        description: {
-          type: DataTypes.STRING,
+        postId: {
+          type: DataTypes.UUID,
           allowNull: false,
         },
         userId: {
           type: DataTypes.UUID,
           allowNull: false,
         },
+        attachmentUrl: {
+          type: DataTypes.STRING,
+          allowNull: false,
+        },
       },
       {
         sequelize,
         timestamps: true,
-        tableName: 'posts',
+        tableName: 'attachments',
       }
     );
   }
   static associate(models) {
-    Post.belongsTo(models.User, { as: 'user', foreignKey: 'userId' });
+    Attachment.belongsTo(models.Post, { as: 'post', foreignKey: 'postId' });
 
-    Post.hasMany(models.Attachment, {as: 'attachments', foreignKey: 'postId'})
+    Attachment.belongsTo(models.User, { as: 'user', foreignKey: 'userId' });
   }
 }
 
-module.exports = Post;
+module.exports = Attachment;

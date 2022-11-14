@@ -1,31 +1,30 @@
-const jwt = require('jsonwebtoken');
+const passport = require('koa-passport');
+const JwtStrategy = require('passport-jwt').Strategy;
+const ExtractJwt = require('passport-jwt').ExtractJwt;
+
 const { User } = require('../data/models');
-const StatusCodes = require('http-status-codes');
+const config = require('../config');
 
-const isValidToken = (token) => {
-  return jwt.verify(token, process.env.JWT_SECRET);
+const jwtOptions = {
+  jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+  secretOrKey: config.JWT_SECRET,
 };
 
-const authenticateUser = async (ctx, next) => {
-  await next();
-  const authHead = ctx.request.headers.authorization;
+passport.use(
+  new JwtStrategy(jwtOptions, async (payload, done) => {
+    try {
+      const user = await User.findByPk(payload.id);
 
-  if (!authHead) {
-    ctx.status = StatusCodes.UNAUTHORIZED;
-    return (ctx.body = { message: 'Unauthorized to access this route' });
-  }
+      if (!user) {
+        return done(null, null);
+      }
 
-  const token = authHead.split(' ')[1];
-  const validToken = isValidToken(token);
+      done(null, user.dataValues);
+    } catch (err) {
+      console.log(err);
+      done(err, null);
+    }
+  })
+);
 
-  if (!validToken) {
-    ctx.status = StatusCodes.UNAUTHORIZED;
-    return (ctx.body = { message: 'Token invalid' });
-  }
-
-  const { id, email, role } = validToken;
-
-  // ctx.stat.user = { id, email, role };
-};
-
-module.exports = { authenticateUser, isValidToken };
+module.exports = passport.authenticate('jwt', { session: false });

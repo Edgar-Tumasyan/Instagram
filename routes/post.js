@@ -8,19 +8,19 @@ const {
   remove,
 } = require('../controller/PostController');
 
-const { authenticateUser } = require('../middleware/auth');
+const { auth, uploadAttachment } = require('../middleware');
 
 const router = new Router({
   prefix: '/posts',
 });
 
-router.get('/', authenticateUser, findAll);
-router.get('/:id', authenticateUser, findOne);
+router.get('/', auth, findAll);
+router.get('/:id', auth, findOne);
 
-router.post('/', authenticateUser, create);
+router.post('/', auth, uploadAttachment, create);
 
-router.put('/:id', authenticateUser, update);
+router.put('/:id', auth, update);
 
-router.delete('/:id', authenticateUser, remove);
+router.delete('/:id', auth, remove);
 
 module.exports = router;

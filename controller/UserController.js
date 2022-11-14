@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const StatusCodes = require('http-status-codes');
+const cloudinary = require('cloudinary').v2;
 
 const { User } = require('../data/models');
 
@@ -73,6 +74,43 @@ const login = async (ctx) => {
   ctx.body = { data, token };
 };
 
+const uploadAvatar = async (ctx) => {
+  const reqAvatar = ctx.request.files.avatar;
+
+  if (!reqAvatar || !reqAvatar[0].mimetype.startsWith('image')) {
+    ctx.status = StatusCodes.BAD_REQUEST;
+
+    return (ctx.body = {
+      message: 'Please choose your avatar, that should be an image',
+    });
+  }
+
+  if (reqAvatar.length > 1) {
+    ctx.status = StatusCodes.BAD_REQUEST;
+
+    return (ctx.body = { message: 'Please choose one photo' });
+  }
+
+  const avatar = await cloudinary.uploader.upload(reqAvatar[0].path, {
+    use_filename: true,
+    folder: 'avatars',
+  });
+
+  await User.update(
+    { avatar: avatar.secure_url },
+    {
+      where: {
+        id: ctx.state.user.id,
+      },
+    }
+  );
+
+  const { password, email, createdAt, updatedAt, ...data } = ctx.state.user;
+
+  ctx.status = StatusCodes.CREATED;
+  ctx.body = { user: data };
+};
+
 const findAll = async (ctx) => {
   const users = await User.findAll();
   const count = users.length;
@@ -111,4 +149,4 @@ const remove = async (ctx) => {
   ctx.body = { message: 'UserController deleted' };
 };
 
-module.exports = { create, login, findAll, findOne, remove };
+module.exports = { create, login, uploadAvatar, findAll, findOne, remove };

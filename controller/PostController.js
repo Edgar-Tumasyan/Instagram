@@ -1,35 +1,53 @@
 const StatusCodes = require('http-status-codes');
-const { Post, User } = require('../data/models');
-const { isValidToken } = require('../middleware/auth');
+
+const { Post, User, Attachment } = require('../data/models');
+const getAttachmentsUrl = require('../helpers/getAttachmentsUrl');
 
 const create = async (ctx) => {
-  const { description, image } = ctx.request.body;
+  const { title, description } = ctx.request.body;
 
-  if (!description) {
+  if (!description || !title) {
     ctx.status = StatusCodes.BAD_REQUEST;
 
-    return (ctx.body = { message: 'Description can not be empty' });
+    return (ctx.body = { message: 'Please provide description and title' });
   }
 
-  // It's only for testing, then user_id we geting from middleware
-  const token = ctx.request.headers.authorization.split(' ')[1];
-  const { id } = isValidToken(token);
+  const userId = ctx.state.user.id;
 
-  let newPost = null;
+  const newPost = await Post.create({ title, description, userId });
 
-  if (image) {
-    newPost = await Post.create({ description, image, userId: id });
-    console.log(newPost.dataValues);
-  } else {
-    newPost = await Post.create({ description, userId: id });
+  if (!ctx.request.files.attachment) {
+    ctx.status = StatusCodes.CREATED;
+
+    return (ctx.body = { post: newPost });
   }
+
+  const attachmentsUrl = await getAttachmentsUrl(
+    ctx,
+    newPost.id,
+    ctx.state.user.id,
+    ctx.request.files.attachment
+  );
 
   ctx.status = StatusCodes.CREATED;
-  ctx.body = { post: newPost };
+  ctx.body = { post: newPost, attachments: attachmentsUrl };
 };
 
 const findAll = async (ctx) => {
-  const posts = await Post.findAll();
+  const posts = await Post.findAll({
+    include: [
+      {
+        attributes: ['firstname', 'lastname'],
+        model: User,
+        as: 'user',
+      },
+      {
+        attributes: ['attachmentUrl'],
+        model: Attachment,
+        as: 'attachments',
+      },
+    ],
+  });
 
   ctx.status = StatusCodes.OK;
   ctx.body = { posts };
@@ -42,6 +60,11 @@ const findOne = async (ctx) => {
         attributes: ['firstname', 'lastname'],
         model: User,
         as: 'user',
+      },
+      {
+        attributes: ['attachmentUrl'],
+        model: Attachment,
+        as: 'attachments',
       },
     ],
   });

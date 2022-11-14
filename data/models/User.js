@@ -36,6 +36,7 @@ class User extends Model {
           defaultValue: 'user',
           allowNull: false,
         },
+        avatar: DataTypes.STRING,
       },
       {
         sequelize,
@@ -46,6 +47,7 @@ class User extends Model {
   }
   static associate(models) {
     User.hasMany(models.Post, { as: 'posts', foreignKey: 'userId' });
+    User.hasMany(models.Attachment, {as: 'attachments', foreignKey: 'userId'})
   }
 }
 
