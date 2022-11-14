@@ -1,5 +1,5 @@
-const uploadAvatar = require('./uploadAvatar')
+const getAvatar = require('./getAvatar')
 const auth = require('./auth')
-const uploadAttachment = require('./uploadAttachments')
+const getAttachment = require('./getAttachments')
 
-module.exports = {uploadAvatar, uploadAttachment, auth}
+module.exports = {getAvatar, getAttachment, auth}

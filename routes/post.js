@@ -8,7 +8,7 @@ const {
   remove,
 } = require('../controller/PostController');
 
-const { auth, uploadAttachment } = require('../middleware');
+const { auth, getAttachment } = require('../middleware');
 
 const router = new Router({
   prefix: '/posts',
@@ -17,7 +17,7 @@ const router = new Router({
 router.get('/', auth, findAll);
 router.get('/:id', auth, findOne);
 
-router.post('/', auth, uploadAttachment, create);
+router.post('/', auth, getAttachment, create);
 
 router.put('/:id', auth, update);
 
