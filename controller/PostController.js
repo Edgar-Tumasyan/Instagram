@@ -34,7 +34,17 @@ const create = async (ctx) => {
 };
 
 const findAll = async (ctx) => {
-  const posts = await Post.findAll({
+  let { limit, offset } = ctx.query;
+
+  if (!limit) {
+    limit = 2;
+  }
+
+  if (!offset) {
+    offset = 0;
+  }
+
+  const { rows: posts, count: total } = await Post.findAndCountAll({
     include: [
       {
         attributes: ['firstname', 'lastname'],
@@ -47,10 +57,19 @@ const findAll = async (ctx) => {
         as: 'attachments',
       },
     ],
+    offset,
+    limit,
+    distinct: true,
   });
 
   ctx.status = StatusCodes.OK;
-  ctx.body = { posts };
+  ctx.body = {
+    total,
+    limit,
+    currentPage: Math.ceil(offset / limit),
+    pageCount: Math.ceil(total / limit),
+    posts,
+  };
 };
 
 const findOne = async (ctx) => {

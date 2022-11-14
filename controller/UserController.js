@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const StatusCodes = require('http-status-codes');
 const cloudinary = require('cloudinary').v2;
 
-const { User } = require('../data/models');
+const { User, Post, Attachment, Follow } = require('../data/models');
 
 const create = async (ctx) => {
   const { firstname, lastname, email, password } = ctx.request.body;
@@ -112,11 +112,56 @@ const uploadAvatar = async (ctx) => {
 };
 
 const findAll = async (ctx) => {
-  const users = await User.findAll();
-  const count = users.length;
+  let { limit, offset } = ctx.query;
+
+  if (!limit) {
+    limit = 2;
+  }
+
+  if (!offset) {
+    offset = 0;
+  }
+
+  const { rows: users, count: total } = await User.findAndCountAll({
+    attributes: ['firstname', 'lastname'],
+    include: [
+      {
+        model: Post,
+        as: 'posts',
+        include: [
+          {
+            attributes: ['attachmentUrl'],
+            model: Attachment,
+            as: 'attachments',
+          },
+        ],
+      },
+      {
+        attributes: ['followerId'],
+        model: Follow,
+        as: 'followers',
+        include: [
+          {
+            attributes: ['firstname', 'lastname'],
+            model: User,
+            as: 'user',
+          },
+        ],
+      },
+    ],
+    offset,
+    limit,
+    distinct: true,
+  });
 
   ctx.status = StatusCodes.OK;
-  ctx.body = { count, users };
+  ctx.body = {
+    total,
+    limit,
+    currentPage: Math.ceil(offset / limit) || 1,
+    pageCount: Math.ceil(total / limit),
+    users,
+  };
 };
 
 const findOne = async (ctx) => {
