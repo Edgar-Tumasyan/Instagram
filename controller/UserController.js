@@ -135,18 +135,20 @@ const findOne = async (ctx) => {
 };
 
 const remove = async (ctx) => {
-  const user = await User.findByPk(ctx.request.params.id);
+  if (ctx.state.user.id !== ctx.request.params.id) {
+    ctx.status = StatusCodes.UNAUTHORIZED;
 
-  if (!user) {
-    ctx.status = StatusCodes.BAD_REQUEST;
-
-    return (ctx.body = `No user with id ${ctx.request.params.id}`);
+    return (ctx.body = `User can delete only his account`);
   }
 
-  await User.destroy({ where: { id: ctx.request.params.id } });
+  try {
+    await User.destroy({ where: { id: ctx.state.user.id } });
 
-  ctx.status = StatusCodes.OK;
-  ctx.body = { message: 'UserController deleted' };
+    ctx.status = StatusCodes.OK;
+    ctx.body = { message: 'User deleted' };
+  } catch (e) {
+    console.log(e);
+  }
 };
 
 module.exports = { create, login, uploadAvatar, findAll, findOne, remove };
