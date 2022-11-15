@@ -2,9 +2,8 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const StatusCodes = require('http-status-codes');
 const cloudinary = require('cloudinary').v2;
-const { Sequelize } = require('sequelize');
 
-const { User, Post, Attachment, Follow } = require('../data/models');
+const { User, Post } = require('../data/models');
 const config = require('../config');
 
 const create = async (ctx) => {
@@ -13,7 +12,7 @@ const create = async (ctx) => {
   if (!firstname || !lastname || !email || !password) {
     ctx.status = StatusCodes.BAD_REQUEST;
 
-    return (ctx.body = 'Please provide all values');
+    return (ctx.body = { message: 'Please provide all values' });
   }
 
   const existingEmail = await User.findOne({ where: { email } });
@@ -21,7 +20,7 @@ const create = async (ctx) => {
   if (existingEmail) {
     ctx.status = StatusCodes.BAD_REQUEST;
 
-    return (ctx.body = `Email ${email} already exist`);
+    return (ctx.body = { message: `Email ${email} already exist` });
   }
 
   const hashPassword = await bcrypt.hash(password, 10);
@@ -36,6 +35,7 @@ const create = async (ctx) => {
   const { password: userPassword, ...data } = newUser.dataValues;
 
   ctx.status = StatusCodes.CREATED;
+
   ctx.body = { user: data };
 };
 
@@ -50,18 +50,10 @@ const login = async (ctx) => {
 
   const user = await User.findOne({ where: { email } });
 
-  if (!user) {
+  if (!user || !(await bcrypt.compare(password, user.password))) {
     ctx.status = StatusCodes.NOT_FOUND;
 
-    return (ctx.body = 'Please provide correct email');
-  }
-
-  const correctPassword = await bcrypt.compare(password, user.password);
-
-  if (!correctPassword) {
-    ctx.status = StatusCodes.BAD_REQUEST;
-
-    return (ctx.body = 'Please provide correct password');
+    return (ctx.body = 'Invalid Credentials');
   }
 
   const token = jwt.sign(
@@ -72,7 +64,7 @@ const login = async (ctx) => {
 
   const { password: userPassword, ...data } = user.dataValues;
 
-  ctx.status = StatusCodes.CREATED;
+  ctx.status = StatusCodes.OK;
 
   ctx.body = { user: data, token };
 };
@@ -98,8 +90,6 @@ const uploadAvatar = async (ctx) => {
     use_filename: true,
     folder: 'avatars',
   });
-
-  console.log(avatar.secure_url);
 
   await User.update(
     { avatar: avatar.secure_url },
@@ -164,12 +154,13 @@ const findAll = async (ctx) => {
   });
 
   ctx.status = StatusCodes.OK;
+
   ctx.body = {
     users,
     _meta: {
       total,
       limit,
-      currentPage: Math.ceil((Number(offset) + 1) / limit) || 1,
+      currentPage: Math.ceil((offset + 1) / limit) || 1,
       pageCount: Math.ceil(total / limit),
     },
   };
@@ -177,37 +168,33 @@ const findAll = async (ctx) => {
 
 const findOne = async (ctx) => {
   const user = await User.findByPk(ctx.request.params.id, {
-    attributes: ['id', 'firstname', 'lastname'],
-    include: [
-      {
-        model: Post,
-        as: 'posts',
-      },
-    ],
+    //  attributes: ['id', 'firstname', 'lastname'],
+    // include: [
+    //   {
+    //     model: Post,
+    //     as: 'posts',
+    //   },
+    // ],
   });
 
   if (!user) {
-    ctx.status = StatusCodes.NOT_FOUND;
+    // ctx.status = StatusCodes.NOT_FOUND;
 
     return (ctx.body = `No user with id ${ctx.request.params.id}`);
   }
 
   ctx.status = StatusCodes.OK;
+
   ctx.body = { user };
 };
 
 const remove = async (ctx) => {
   // create cascade
-  if (ctx.state.user.id !== ctx.request.params.id) {
-    ctx.status = StatusCodes.UNAUTHORIZED;
-
-    return (ctx.body = `You can delete only your account`);
-  }
-
   await User.destroy({ where: { id: ctx.state.user.id } });
 
-  ctx.status = StatusCodes.OK;
-  ctx.body = { message: 'User deleted' };
+  ctx.status = StatusCodes.NO_CONTENT;
+
+  ctx.body = {};
 };
 
 module.exports = { create, login, uploadAvatar, findAll, findOne, remove };

@@ -4,7 +4,7 @@ const { Post, User, Attachment } = require('../data/models');
 const getAttachmentsUrl = require('../helpers/getAttachmentsUrl');
 
 const create = async (ctx) => {
-  const { title, description } = ctx.request.body;
+  const { description, title } = ctx.request.body;
 
   if (!description || !title) {
     ctx.status = StatusCodes.BAD_REQUEST;
@@ -14,7 +14,7 @@ const create = async (ctx) => {
 
   const userId = ctx.state.user.id;
 
-  const newPost = await Post.create({ title, description, userId });
+  const newPost = await Post.create({ description, title, userId });
 
   if (!ctx.request.files.attachment) {
     ctx.status = StatusCodes.CREATED;
@@ -22,12 +22,13 @@ const create = async (ctx) => {
     return (ctx.body = { post: newPost });
   }
 
-  const attachmentsUrl = await getAttachmentsUrl(
-    ctx,
+  const { attachments, attachmentsUrl } = await getAttachmentsUrl(
     newPost.id,
     userId,
     ctx.request.files.attachment
   );
+
+  await Attachment.bulkCreate(attachments);
 
   ctx.status = StatusCodes.CREATED;
 
@@ -63,7 +64,7 @@ const findAll = async (ctx) => {
     _meta: {
       total,
       limit,
-      currentPage: Math.ceil((Number(offset) + 1) / limit) || 1,
+      currentPage: Math.ceil((offset + 1) / limit) || 1,
       pageCount: Math.ceil(total / limit),
     },
   };
@@ -102,13 +103,13 @@ const update = async (ctx) => {
   if (!post) {
     ctx.status = StatusCodes.NOT_FOUND;
 
-    return (ctx.body = `No post with id ${ctx.request.params.id}`);
+    return (ctx.body = {message: `No post with id ${ctx.request.params.id}`});
   }
 
   if (post.userId !== ctx.state.user.id) {
     ctx.status = StatusCodes.UNAUTHORIZED;
 
-    return (ctx.body = `You can update only your posts`);
+    return (ctx.body = {message: `You can update only your posts`});
   }
 
   const { description, title } = ctx.request.body;
@@ -129,7 +130,7 @@ const update = async (ctx) => {
 
   await post.save();
 
-  ctx.status = StatusCodes.OK;
+  ctx.status = StatusCodes.CREATED;
 
   ctx.body = { post };
 };

@@ -1,4 +1,5 @@
 const { DataTypes, Model } = require('sequelize');
+const { Post } = require('./index');
 
 class User extends Model {
   static init(sequelize) {
@@ -56,39 +57,20 @@ class User extends Model {
   }
 
   static addScopes(models) {
-    User.addScope('icludes', () => {
-      return { attributes: ['id', 'firstname', 'lastname'] } ;
+    User.addScope('i', () => {
+      return { attributes: ['id', 'firstname', 'lastname'] };
     });
   }
 }
 
-//{include: [
-//   {
-//     model: Post,
-//     as: 'posts',
-//     include: [
-//       {
-//         attributes: ['attachmentUrl'],
-//         model: Attachment,
-//         as: 'attachments',
-//       },
-//     ],
-//   },
-//   {
-//     attributes: ['followerId'],
-//     model: Follow,
-//     as: 'followers',
-//     include: [
-//       {
-//         attributes: ['firstname', 'lastname'],
-//         model: User,
-//         as: 'user',
-//       },
-//     ],
-//   },
-// ],
-//   // limit,
-//   // offset,
-//   distinct: true,}
+// User.addScope('includes', {
+//   attributes: ['id', 'firstname', 'lastname'],
+//   include: [
+//     {
+//       model: Post,
+//       as: 'posts',
+//     },
+//   ],
+// });
 
 module.exports = User;

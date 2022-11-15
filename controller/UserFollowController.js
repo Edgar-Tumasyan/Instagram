@@ -21,10 +21,9 @@ const follow = async (ctx) => {
   if (isFollowed) {
     ctx.status = StatusCodes.BAD_REQUEST;
 
-    return (ctx.body = ctx.body =
-      {
-        message: `You already follow user with id ${profileId}`,
-      });
+    return (ctx.body = {
+      message: `You already follow user with id ${profileId}`,
+    });
   }
 
   await Follow.create({
@@ -58,10 +57,9 @@ const unfollow = async (ctx) => {
   if (!isFollowed) {
     ctx.status = StatusCodes.NOT_FOUND;
 
-    return (ctx.body = ctx.body =
-      {
-        message: `You don't follow user with id ${profileId}`,
-      });
+    return (ctx.body = {
+      message: `You don't follow user with id ${profileId}`,
+    });
   }
 
   await Follow.destroy({

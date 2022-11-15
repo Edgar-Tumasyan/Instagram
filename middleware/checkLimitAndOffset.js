@@ -9,6 +9,9 @@ module.exports = async (ctx, next) => {
     offset = 0;
   }
 
+  limit = parseInt(limit);
+  offset = parseInt(offset);
+
   ctx.state.paginate = { limit, offset };
 
   await next();

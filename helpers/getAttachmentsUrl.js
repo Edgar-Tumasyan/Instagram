@@ -1,18 +1,24 @@
-const { v2: cloudinary } = require('cloudinary');
+const cloudinary = require('cloudinary').v2;
 
-const {Attachment } = require('../data/models')
+module.exports = async (postId, userId, reqAttachments) => {
+  const attachments = [];
 
-module.exports = async (ctx, postId, userId, reqAttachments) => {
   const attachmentsUrl = [];
+
   for (const file of reqAttachments) {
     const attachment = await cloudinary.uploader.upload(file.path, {
       use_filename: true,
       folder: 'attachments',
     });
 
-    await Attachment.create({ postId, userId, attachmentUrl: attachment.secure_url })
+    attachments.push({
+      postId,
+      userId,
+      attachmentUrl: attachment.secure_url,
+    });
 
     attachmentsUrl.push(attachment.secure_url);
   }
-  return attachmentsUrl;
+
+  return { attachments, attachmentsUrl };
 };
