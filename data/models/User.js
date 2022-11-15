@@ -1,5 +1,4 @@
-const { DataTypes, Model } = require('sequelize');
-const { Post } = require('./index');
+const { DataTypes, Model, literal } = require('sequelize');
 
 class User extends Model {
   static init(sequelize) {
@@ -43,34 +42,58 @@ class User extends Model {
         sequelize,
         timestamps: true,
         tableName: 'users',
+
+        // scopes: {
+        //   userScope: {
+        //     attributes: ['id', 'firstname', 'lastname'],
+        //   },
+        //   includeScope: {
+        //     include: [
+        //       {
+        //         model: Post,
+        //         as: 'posts',
+        //       },
+        //     ],
+        //   },
+        // },
       }
     );
   }
 
   static associate(models) {
     User.hasMany(models.Post, { as: 'posts', foreignKey: 'userId' });
+
+    User.hasMany(models.Follow, { as: 'followers', foreignKey: 'followingId' });
+
     User.hasMany(models.Attachment, {
       as: 'attachments',
       foreignKey: 'userId',
     });
-    User.hasMany(models.Follow, { as: 'followers', foreignKey: 'followingId' });
   }
 
   static addScopes(models) {
-    User.addScope('i', () => {
-      return { attributes: ['id', 'firstname', 'lastname'] };
+    User.addScope('profile', () => {
+      return {
+        attributes: [
+          'id',
+          'firstname',
+          'lastname',
+          [
+            literal(
+              `(SELECT count('*') FROM posts WHERE "userId" = "User"."id")::int`
+            ),
+            'postsCount',
+          ],
+          [
+            literal(
+              `(SELECT count('*') FROM follows WHERE "followingId" = "User"."id")::int`
+            ),
+            'followersCount',
+          ],
+        ],
+      };
     });
   }
 }
-
-// User.addScope('includes', {
-//   attributes: ['id', 'firstname', 'lastname'],
-//   include: [
-//     {
-//       model: Post,
-//       as: 'posts',
-//     },
-//   ],
-// });
 
 module.exports = User;

@@ -22,3 +22,6 @@ module.exports = async (postId, userId, reqAttachments) => {
 
   return { attachments, attachmentsUrl };
 };
+
+
+

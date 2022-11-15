@@ -108,46 +108,11 @@ const uploadAvatar = async (ctx) => {
 };
 
 const findAll = async (ctx) => {
-  // create with scope, return posts.count, followers count
   const { limit, offset } = ctx.state.paginate;
 
-  const { rows: users, count: total } = await User.findAndCountAll({
-    attributes: ['id', 'firstname', 'lastname'],
-    include: [
-      {
-        //
-        // attributes: {
-        //   include: [
-        //     [
-        //       // Note the wrapping parentheses in the call below!
-        //       Sequelize.literal(`(
-        //             SELECT COUNT(*)
-        //             FROM posts AS post
-        //             WHERE
-        //                 post.userId = user.id
-        //
-        //         )`),
-        //       'postsCount',
-        //     ],
-        //   ],
-        // },
-        //
-        model: Post,
-        as: 'posts',
-      },
-      // {
-      //   attributes: ['followerId'],
-      //   model: Follow,
-      //   as: 'followers',
-      //   include: [
-      //     {
-      //       attributes: ['firstname', 'lastname'],
-      //       model: User,
-      //       as: 'user',
-      //     },
-      //   ],
-      // },
-    ],
+  const { rows: users, count: total } = await User.scope({
+    method: ['profile'],
+  }).findAndCountAll({
     offset,
     limit,
     distinct: true,
@@ -159,7 +124,6 @@ const findAll = async (ctx) => {
     users,
     _meta: {
       total,
-      limit,
       currentPage: Math.ceil((offset + 1) / limit) || 1,
       pageCount: Math.ceil(total / limit),
     },
@@ -167,18 +131,13 @@ const findAll = async (ctx) => {
 };
 
 const findOne = async (ctx) => {
-  const user = await User.findByPk(ctx.request.params.id, {
-    //  attributes: ['id', 'firstname', 'lastname'],
-    // include: [
-    //   {
-    //     model: Post,
-    //     as: 'posts',
-    //   },
-    // ],
-  });
+  const user = await User.scope({ method: ['profile'] }).findByPk(
+    ctx.request.params.id,
+    {}
+  );
 
   if (!user) {
-    // ctx.status = StatusCodes.NOT_FOUND;
+    ctx.status = StatusCodes.NOT_FOUND;
 
     return (ctx.body = `No user with id ${ctx.request.params.id}`);
   }
