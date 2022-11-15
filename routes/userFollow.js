@@ -8,6 +8,7 @@ const router = new Router({
 });
 
 router.post('/follow/:profileId', auth, UserFollowController.follow);
+
 router.delete('/unfollow/:profileId', auth, UserFollowController.unfollow);
 
 module.exports = router;

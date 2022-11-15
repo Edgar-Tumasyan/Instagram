@@ -2,8 +2,10 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const StatusCodes = require('http-status-codes');
 const cloudinary = require('cloudinary').v2;
+const { Sequelize } = require('sequelize');
 
 const { User, Post, Attachment, Follow } = require('../data/models');
+const config = require('../config');
 
 const create = async (ctx) => {
   const { firstname, lastname, email, password } = ctx.request.body;
@@ -34,7 +36,7 @@ const create = async (ctx) => {
   const { password: userPassword, ...data } = newUser.dataValues;
 
   ctx.status = StatusCodes.CREATED;
-  ctx.body = { data };
+  ctx.body = { user: data };
 };
 
 const login = async (ctx) => {
@@ -49,7 +51,7 @@ const login = async (ctx) => {
   const user = await User.findOne({ where: { email } });
 
   if (!user) {
-    ctx.status = StatusCodes.BAD_REQUEST;
+    ctx.status = StatusCodes.NOT_FOUND;
 
     return (ctx.body = 'Please provide correct email');
   }
@@ -64,14 +66,15 @@ const login = async (ctx) => {
 
   const token = jwt.sign(
     { id: user.id, email: user.email, role: user.role },
-    process.env.JWT_SECRET,
-    { expiresIn: '10d' }
+    config.JWT_SECRET,
+    { expiresIn: config.TOKEN_EXPIRESIN }
   );
 
   const { password: userPassword, ...data } = user.dataValues;
 
   ctx.status = StatusCodes.CREATED;
-  ctx.body = { data, token };
+
+  ctx.body = { user: data, token };
 };
 
 const uploadAvatar = async (ctx) => {
@@ -96,6 +99,8 @@ const uploadAvatar = async (ctx) => {
     folder: 'avatars',
   });
 
+  console.log(avatar.secure_url);
+
   await User.update(
     { avatar: avatar.secure_url },
     {
@@ -108,46 +113,50 @@ const uploadAvatar = async (ctx) => {
   const { password, email, createdAt, updatedAt, ...data } = ctx.state.user;
 
   ctx.status = StatusCodes.CREATED;
+
   ctx.body = { user: data };
 };
 
 const findAll = async (ctx) => {
-  let { limit, offset } = ctx.query;
-
-  if (!limit) {
-    limit = 2;
-  }
-
-  if (!offset) {
-    offset = 0;
-  }
+  // create with scope, return posts.count, followers count
+  const { limit, offset } = ctx.state.paginate;
 
   const { rows: users, count: total } = await User.findAndCountAll({
-    attributes: ['firstname', 'lastname'],
+    attributes: ['id', 'firstname', 'lastname'],
     include: [
       {
+        //
+        // attributes: {
+        //   include: [
+        //     [
+        //       // Note the wrapping parentheses in the call below!
+        //       Sequelize.literal(`(
+        //             SELECT COUNT(*)
+        //             FROM posts AS post
+        //             WHERE
+        //                 post.userId = user.id
+        //
+        //         )`),
+        //       'postsCount',
+        //     ],
+        //   ],
+        // },
+        //
         model: Post,
         as: 'posts',
-        include: [
-          {
-            attributes: ['attachmentUrl'],
-            model: Attachment,
-            as: 'attachments',
-          },
-        ],
       },
-      {
-        attributes: ['followerId'],
-        model: Follow,
-        as: 'followers',
-        include: [
-          {
-            attributes: ['firstname', 'lastname'],
-            model: User,
-            as: 'user',
-          },
-        ],
-      },
+      // {
+      //   attributes: ['followerId'],
+      //   model: Follow,
+      //   as: 'followers',
+      //   include: [
+      //     {
+      //       attributes: ['firstname', 'lastname'],
+      //       model: User,
+      //       as: 'user',
+      //     },
+      //   ],
+      // },
     ],
     offset,
     limit,
@@ -156,44 +165,49 @@ const findAll = async (ctx) => {
 
   ctx.status = StatusCodes.OK;
   ctx.body = {
-    total,
-    limit,
-    currentPage: Math.ceil(offset / limit) || 1,
-    pageCount: Math.ceil(total / limit),
     users,
+    _meta: {
+      total,
+      limit,
+      currentPage: Math.ceil((Number(offset) + 1) / limit) || 1,
+      pageCount: Math.ceil(total / limit),
+    },
   };
 };
 
 const findOne = async (ctx) => {
-  const user = await User.findByPk(ctx.request.params.id);
+  const user = await User.findByPk(ctx.request.params.id, {
+    attributes: ['id', 'firstname', 'lastname'],
+    include: [
+      {
+        model: Post,
+        as: 'posts',
+      },
+    ],
+  });
 
   if (!user) {
-    ctx.status = StatusCodes.BAD_REQUEST;
+    ctx.status = StatusCodes.NOT_FOUND;
 
     return (ctx.body = `No user with id ${ctx.request.params.id}`);
   }
 
-  const { password, ...data } = user.dataValues;
-
   ctx.status = StatusCodes.OK;
-  ctx.body = { data };
+  ctx.body = { user };
 };
 
 const remove = async (ctx) => {
+  // create cascade
   if (ctx.state.user.id !== ctx.request.params.id) {
     ctx.status = StatusCodes.UNAUTHORIZED;
 
-    return (ctx.body = `User can delete only his account`);
+    return (ctx.body = `You can delete only your account`);
   }
 
-  try {
-    await User.destroy({ where: { id: ctx.state.user.id } });
+  await User.destroy({ where: { id: ctx.state.user.id } });
 
-    ctx.status = StatusCodes.OK;
-    ctx.body = { message: 'User deleted' };
-  } catch (e) {
-    console.log(e);
-  }
+  ctx.status = StatusCodes.OK;
+  ctx.body = { message: 'User deleted' };
 };
 
 module.exports = { create, login, uploadAvatar, findAll, findOne, remove };

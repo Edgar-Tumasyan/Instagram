@@ -1,13 +1,13 @@
 const Router = require('koa-router');
 
 const UserController = require('../controller/UserController');
-const { auth, getAvatar } = require('../middleware');
+const { auth, getAvatar, checkLimitAndOffset } = require('../middleware');
 
 const router = new Router({
   prefix: '/users',
 });
 
-router.get('/', auth, UserController.findAll);
+router.get('/', auth, checkLimitAndOffset, UserController.findAll);
 router.get('/:id', auth, UserController.findOne);
 
 router.post('/', UserController.create);

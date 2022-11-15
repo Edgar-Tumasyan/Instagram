@@ -45,11 +45,50 @@ class User extends Model {
       }
     );
   }
+
   static associate(models) {
     User.hasMany(models.Post, { as: 'posts', foreignKey: 'userId' });
-    User.hasMany(models.Attachment, {as: 'attachments', foreignKey: 'userId'})
-    User.hasMany(models.Follow, {as: 'followers', foreignKey: 'followingId'})
+    User.hasMany(models.Attachment, {
+      as: 'attachments',
+      foreignKey: 'userId',
+    });
+    User.hasMany(models.Follow, { as: 'followers', foreignKey: 'followingId' });
+  }
+
+  static addScopes(models) {
+    User.addScope('icludes', () => {
+      return { attributes: ['id', 'firstname', 'lastname'] } ;
+    });
   }
 }
+
+//{include: [
+//   {
+//     model: Post,
+//     as: 'posts',
+//     include: [
+//       {
+//         attributes: ['attachmentUrl'],
+//         model: Attachment,
+//         as: 'attachments',
+//       },
+//     ],
+//   },
+//   {
+//     attributes: ['followerId'],
+//     model: Follow,
+//     as: 'followers',
+//     include: [
+//       {
+//         attributes: ['firstname', 'lastname'],
+//         model: User,
+//         as: 'user',
+//       },
+//     ],
+//   },
+// ],
+//   // limit,
+//   // offset,
+//   distinct: true,}
 
 module.exports = User;

@@ -8,13 +8,13 @@ const {
   remove,
 } = require('../controller/PostController');
 
-const { auth, getAttachment } = require('../middleware');
+const { auth, getAttachment, checkLimitAndOffset } = require('../middleware');
 
 const router = new Router({
   prefix: '/posts',
 });
 
-router.get('/', auth, findAll);
+router.get('/', auth, checkLimitAndOffset, findAll);
 router.get('/:id', auth, findOne);
 
 router.post('/', auth, getAttachment, create);

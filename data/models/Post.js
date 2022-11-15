@@ -30,10 +30,14 @@ class Post extends Model {
       }
     );
   }
+
   static associate(models) {
     Post.belongsTo(models.User, { as: 'user', foreignKey: 'userId' });
 
-    Post.hasMany(models.Attachment, {as: 'attachments', foreignKey: 'postId'})
+    Post.hasMany(models.Attachment, {
+      as: 'attachments',
+      foreignKey: 'postId',
+    });
   }
 }
 

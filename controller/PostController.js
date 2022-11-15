@@ -25,34 +25,29 @@ const create = async (ctx) => {
   const attachmentsUrl = await getAttachmentsUrl(
     ctx,
     newPost.id,
-    ctx.state.user.id,
+    userId,
     ctx.request.files.attachment
   );
 
   ctx.status = StatusCodes.CREATED;
+
   ctx.body = { post: newPost, attachments: attachmentsUrl };
 };
 
 const findAll = async (ctx) => {
-  let { limit, offset } = ctx.query;
-
-  if (!limit) {
-    limit = 2;
-  }
-
-  if (!offset) {
-    offset = 0;
-  }
+  // create with scope, return posts.count, followers count
+  const { limit, offset } = ctx.state.paginate;
 
   const { rows: posts, count: total } = await Post.findAndCountAll({
+    attributes: ['id', 'description', 'title'],
     include: [
       {
-        attributes: ['firstname', 'lastname'],
+        attributes: ['id', 'firstname', 'lastname'],
         model: User,
         as: 'user',
       },
       {
-        attributes: ['attachmentUrl'],
+        attributes: ['id', 'attachmentUrl'],
         model: Attachment,
         as: 'attachments',
       },
@@ -64,24 +59,27 @@ const findAll = async (ctx) => {
 
   ctx.status = StatusCodes.OK;
   ctx.body = {
-    total,
-    limit,
-    currentPage: Math.ceil(offset / limit),
-    pageCount: Math.ceil(total / limit),
     posts,
+    _meta: {
+      total,
+      limit,
+      currentPage: Math.ceil((Number(offset) + 1) / limit) || 1,
+      pageCount: Math.ceil(total / limit),
+    },
   };
 };
 
 const findOne = async (ctx) => {
   const post = await Post.findByPk(ctx.request.params.id, {
+    attributes: ['id', 'description', 'title'],
     include: [
       {
-        attributes: ['firstname', 'lastname'],
+        attributes: ['id', 'firstname', 'lastname'],
         model: User,
         as: 'user',
       },
       {
-        attributes: ['attachmentUrl'],
+        attributes: ['id', 'attachmentUrl'],
         model: Attachment,
         as: 'attachments',
       },
@@ -89,7 +87,7 @@ const findOne = async (ctx) => {
   });
 
   if (!post) {
-    ctx.status = StatusCodes.BAD_REQUEST;
+    ctx.status = StatusCodes.NOT_FOUND;
 
     return (ctx.body = `No post with id ${ctx.request.params.id}`);
   }
@@ -102,14 +100,20 @@ const update = async (ctx) => {
   const post = await Post.findByPk(ctx.request.params.id);
 
   if (!post) {
-    ctx.status = StatusCodes.BAD_REQUEST;
+    ctx.status = StatusCodes.NOT_FOUND;
 
     return (ctx.body = `No post with id ${ctx.request.params.id}`);
   }
 
-  const { description, image } = ctx.request.body;
+  if (post.userId !== ctx.state.user.id) {
+    ctx.status = StatusCodes.UNAUTHORIZED;
 
-  if (!description && !image) {
+    return (ctx.body = `You can update only your posts`);
+  }
+
+  const { description, title } = ctx.request.body;
+
+  if (!description && !title) {
     ctx.status = StatusCodes.BAD_REQUEST;
 
     return (ctx.body = { message: 'No value to updated' });
@@ -119,18 +123,38 @@ const update = async (ctx) => {
     post.description = description;
   }
 
-  if (image) {
-    post.image = image;
+  if (title) {
+    post.title = title;
   }
 
   await post.save();
 
   ctx.status = StatusCodes.OK;
-  ctx.body = { message: post };
+
+  ctx.body = { post };
 };
 
 const remove = async (ctx) => {
-  ctx.body = 'remove';
+  // cascade
+  const post = await Post.findByPk(ctx.request.params.id);
+
+  if (!post) {
+    ctx.status = StatusCodes.NOT_FOUND;
+
+    return (ctx.body = `No post with id ${ctx.request.params.id}`);
+  }
+
+  if (post.userId !== ctx.state.user.id) {
+    ctx.status = StatusCodes.UNAUTHORIZED;
+
+    return (ctx.body = `You can delete only your posts`);
+  }
+
+  await Post.destroy({ where: { id: post.id } });
+
+  ctx.status = StatusCodes.OK;
+
+  ctx.body = { message: 'Post deleted' };
 };
 
 module.exports = { create, findAll, findOne, update, remove };

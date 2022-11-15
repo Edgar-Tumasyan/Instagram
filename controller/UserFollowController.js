@@ -1,6 +1,6 @@
 const StatusCodes = require('http-status-codes');
 
-const { User, Follow } = require('../data/models');
+const { Follow } = require('../data/models');
 
 const follow = async (ctx) => {
   const { profileId } = ctx.params;
@@ -18,22 +18,23 @@ const follow = async (ctx) => {
     },
   });
 
-  if (!isFollowed) {
-    const followed = await Follow.create({
-      followerId: ctx.state.user.id,
-      followingId: profileId,
-    });
+  if (isFollowed) {
+    ctx.status = StatusCodes.BAD_REQUEST;
 
-    ctx.status = StatusCodes.CREATED;
-
-    return (ctx.body = { message: `You follow user with id: ${profileId}` });
+    return (ctx.body = ctx.body =
+      {
+        message: `You already follow user with id ${profileId}`,
+      });
   }
 
-  ctx.status = StatusCodes.BAD_REQUEST;
+  await Follow.create({
+    followerId: ctx.state.user.id,
+    followingId: profileId,
+  });
 
-  ctx.body = ctx.body = {
-    message: `You already follow user with id ${profileId}`,
-  };
+  ctx.status = StatusCodes.CREATED;
+
+  ctx.body = { message: `You follow user with id: ${profileId}` };
 };
 
 const unfollow = async (ctx) => {
@@ -54,21 +55,22 @@ const unfollow = async (ctx) => {
     },
   });
 
-  if (isFollowed) {
-    await Follow.destroy({
-      where: { followerId: ctx.state.user.id, followingId: profileId },
-    });
+  if (!isFollowed) {
+    ctx.status = StatusCodes.NOT_FOUND;
 
-    ctx.status = StatusCodes.OK;
-
-    return (ctx.body = { message: `You unfollow user with id: ${profileId}` });
+    return (ctx.body = ctx.body =
+      {
+        message: `You don't follow user with id ${profileId}`,
+      });
   }
 
-  ctx.status = StatusCodes.BAD_REQUEST;
+  await Follow.destroy({
+    where: { followerId: ctx.state.user.id, followingId: profileId },
+  });
 
-  ctx.body = ctx.body = {
-    message: `You don't follow user with id ${profileId}`,
-  };
+  ctx.status = StatusCodes.OK;
+
+  return (ctx.body = { message: `You unfollow user with id: ${profileId}` });
 };
 
 module.exports = { follow, unfollow };

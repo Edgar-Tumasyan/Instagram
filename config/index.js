@@ -10,10 +10,10 @@ module.exports = {
     password: process.env.SQL_PASSWORD,
   },
   JWT_SECRET: process.env.JWT_SECRET,
+  TOKEN_EXPIRESIN: '10d',
   cloudinary: {
     cloud_name: process.env.CLOUD_NAME,
     api_key: process.env.CLOUD_API_KEY,
-    api_secret: process.env.CLOUD_API_SECRET
+    api_secret: process.env.CLOUD_API_SECRET,
   },
-
 };
