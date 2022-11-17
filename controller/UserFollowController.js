@@ -6,9 +6,7 @@ const follow = async (ctx) => {
   const { profileId } = ctx.params;
 
   if (profileId === ctx.state.user.id) {
-    ctx.status = HttpStatus.BAD_REQUEST;
-
-    return (ctx.body = { message: `You can't follow your account` });
+    return ctx.badRequest({ message: `You can't follow your account` });
   }
 
   const isFollowed = await Follow.findOne({
@@ -19,9 +17,7 @@ const follow = async (ctx) => {
   });
 
   if (isFollowed) {
-    ctx.status = HttpStatus.BAD_REQUEST;
-
-    return (ctx.body = {
+    ctx.badRequest({
       message: `You already follow user with id ${profileId}`,
     });
   }
@@ -31,18 +27,14 @@ const follow = async (ctx) => {
     followingId: profileId,
   });
 
-  ctx.status = HttpStatus.CREATED;
-
-  ctx.body = { message: `You follow user with id: ${profileId}` };
+  ctx.created({ message: `You follow user with id: ${profileId}` });
 };
 
 const unfollow = async (ctx) => {
   const { profileId } = ctx.params;
 
   if (profileId === ctx.state.user.id) {
-    ctx.status = HttpStatus.BAD_REQUEST;
-
-    return (ctx.body = {
+    return ctx.badRequest({
       message: `You can't follow and unfollow your account`,
     });
   }
@@ -55,9 +47,7 @@ const unfollow = async (ctx) => {
   });
 
   if (!isFollowed) {
-    ctx.status = HttpStatus.NOT_FOUND;
-
-    return (ctx.body = {
+    ctx.notFound({
       message: `You don't follow user with id ${profileId}`,
     });
   }
@@ -66,9 +56,7 @@ const unfollow = async (ctx) => {
     where: { followerId: ctx.state.user.id, followingId: profileId },
   });
 
-  ctx.status = HttpStatus.OK;
-
-  return (ctx.body = { message: `You unfollow user with id: ${profileId}` });
+  ctx.ok({ message: `You unfollow user with id: ${profileId}` });
 };
 
 module.exports = { follow, unfollow };

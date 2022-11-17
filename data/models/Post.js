@@ -50,6 +50,7 @@ class Post extends Model {
       return {
         attributes: [
           'id',
+          'title',
           'description',
           [
             literal(

@@ -9,9 +9,7 @@ const create = async (ctx) => {
   if (reqAttachments) {
     for (const attachment of reqAttachments) {
       if (!attachment.mimetype.startsWith('image')) {
-        ctx.status = HttpStatus.BAD_REQUEST;
-
-        return (ctx.body = { message: 'Attachment must be an image' });
+        return ctx.badRequest({ message: 'Attachment must be an image' });
       }
     }
   }
@@ -19,9 +17,7 @@ const create = async (ctx) => {
   const { description, title } = ctx.request.body;
 
   if (!description || !title) {
-    ctx.status = HttpStatus.BAD_REQUEST;
-
-    return (ctx.body = { message: 'Please provide description and title' });
+    return ctx.badRequest({ message: 'Please provide description and title' });
   }
 
   const userId = ctx.state.user.id;
@@ -32,10 +28,10 @@ const create = async (ctx) => {
       { transaction: t }
     );
 
-    if (!reqAttachments) {
-      ctx.status = HttpStatus.CREATED;
+    console.log(!reqAttachments);
 
-      return (ctx.body = { post: newPost, attachments: [] });
+    if (!reqAttachments) {
+      return { newPost, attachments: [] };
     }
 
     const postId = newPost.id;
@@ -64,9 +60,7 @@ const create = async (ctx) => {
     });
   });
 
-  ctx.status = HttpStatus.CREATED;
-
-  ctx.body = { post };
+  ctx.created({ post });
 };
 
 const findAll = async (ctx) => {
@@ -79,8 +73,7 @@ const findAll = async (ctx) => {
     limit,
   });
 
-  ctx.status = HttpStatus.OK;
-  ctx.body = {
+  ctx.ok({
     posts,
     _meta: {
       total,
@@ -88,7 +81,7 @@ const findAll = async (ctx) => {
       pageCount: Math.ceil(total / limit),
       currentPage: Math.ceil((offset + 1) / limit) || 1,
     },
-  };
+  });
 };
 
 const findOne = async (ctx) => {
@@ -97,13 +90,12 @@ const findOne = async (ctx) => {
   );
 
   if (!post) {
-    ctx.status = HttpStatus.NOT_FOUND;
-
-    return (ctx.body = { message: `No post with id ${ctx.request.params.id}` });
+    return ctx.notFound({
+      message: `No post with id ${ctx.request.params.id}`,
+    });
   }
 
-  ctx.status = HttpStatus.OK;
-  ctx.body = { post };
+  ctx.ok({ post });
 };
 
 const update = async (ctx) => {
@@ -112,27 +104,21 @@ const update = async (ctx) => {
   );
 
   if (!post) {
-    ctx.status = HttpStatus.NOT_FOUND;
-
-    return (ctx.body = {
+    return ctx.notFound({
       message: `No post with id ${ctx.request.params.id}`,
     });
   }
 
   if (post.user.id !== ctx.state.user.id) {
-    ctx.status = HttpStatus.UNAUTHORIZED;
-
-    return (ctx.body = { message: `You can update only your posts` });
+    return ctx.unauthorized({ message: `You can update only your posts` });
   }
 
   const { description, title, deleteAttachments } = ctx.request.body;
 
-  const newAttachments = ctx.request.files.newAttachments;
+  const newAttachments = ctx.request.files?.newAttachments;
 
   if (!description && !title && !newAttachments && !deleteAttachments) {
-    ctx.status = HttpStatus.BAD_REQUEST;
-
-    return (ctx.body = { message: 'No value to updated' });
+    return ctx.badRequest({ message: 'No values to updated' });
   }
 
   await sequelize.transaction(async (t) => {
@@ -181,19 +167,16 @@ const update = async (ctx) => {
 
   const data = await Post.scope({ method: ['expand'] }).findByPk(post.id);
 
-  ctx.status = HttpStatus.CREATED;
-
-  ctx.body = { post: data };
+  ctx.created({ post: data });
 };
 
 const remove = async (ctx) => {
-  // cascade
   const post = await Post.findByPk(ctx.request.params.id);
 
   if (!post) {
-    ctx.status = HttpStatus.NOT_FOUND;
-
-    return (ctx.body = { message: `No post with id ${ctx.request.params.id}` });
+    return ctx.notFound({
+      message: `No post with id ${ctx.request.params.id}`,
+    });
   }
 
   if (post.userId !== ctx.state.user.id) {
@@ -204,9 +187,7 @@ const remove = async (ctx) => {
 
   await Post.destroy({ where: { id: post.id } });
 
-  ctx.status = HttpStatus.NO_CONTENT;
-
-  ctx.body = {};
+  ctx.noContent();
 };
 
 module.exports = { create, findAll, findOne, update, remove };
