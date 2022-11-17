@@ -1,5 +1,3 @@
-const HttpStatus = require('http-status-codes');
-
 const { Follow } = require('../data/models');
 
 const follow = async (ctx) => {

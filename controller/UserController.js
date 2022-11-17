@@ -1,6 +1,5 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const HttpStatus = require('http-status-codes');
 const Cloudinary = require('../components/cloudinary');
 
 const { User } = require('../data/models');

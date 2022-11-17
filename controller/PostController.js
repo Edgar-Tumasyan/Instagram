@@ -1,5 +1,3 @@
-const HttpStatus = require('http-status-codes');
-
 const Cloudinary = require('../components/cloudinary');
 const { Post, Attachment, sequelize } = require('../data/models');
 
@@ -180,9 +178,7 @@ const remove = async (ctx) => {
   }
 
   if (post.userId !== ctx.state.user.id) {
-    ctx.status = HttpStatus.UNAUTHORIZED;
-
-    return (ctx.body = { message: `You can delete only your posts` });
+    ctx.unauthorized({ message: `You can delete only your posts` });
   }
 
   await Post.destroy({ where: { id: post.id } });
