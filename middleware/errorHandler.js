@@ -7,10 +7,7 @@ module.exports = () => async (ctx, next) => {
     console.log();
 
     if (err.name === 'SequelizeDatabaseError') {
-      ctx.status = HttpStatus.UNPROCESSABLE_ENTITY;
-
-      return (ctx.body = {
-        status: ctx.status,
+      return ctx.unprocessable_entity({
         message: 'Please provide correct values',
       });
     }

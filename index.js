@@ -12,7 +12,13 @@ const port = config.port || 3001;
 app.use(errorHandler());
 
 app.use(require('koa-bodyparser')());
-app.use(require('koa-respond')())
+app.use(
+  require('koa-respond')({
+    statusMethods: {
+      unprocessable_entity: 422,
+    },
+  })
+);
 
 app.use(Routes.routes());
 app.use(Routes.allowedMethods());
