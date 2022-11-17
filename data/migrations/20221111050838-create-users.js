@@ -1,3 +1,7 @@
+const { values: _values } = require('lodash');
+
+const { UserRole } = require('../lcp');
+
 module.exports = {
   async up(queryInterface, Sequelize) {
     await queryInterface.createTable('users', {
@@ -5,45 +9,45 @@ module.exports = {
         type: Sequelize.UUID,
         defaultValue: Sequelize.UUIDV4,
         primaryKey: true,
-        allowNull: false,
+        allowNull: false
       },
       firstname: {
         type: Sequelize.STRING,
-        allowNull: false,
+        allowNull: false
       },
       lastname: {
         type: Sequelize.STRING,
-        allowNull: false,
+        allowNull: false
       },
       email: {
         type: Sequelize.STRING,
         allowNull: false,
         unique: true,
         validate: {
-          isEmail: true,
-        },
+          isEmail: true
+        }
       },
       password: {
         type: Sequelize.STRING,
-        allowNull: false,
+        allowNull: false
       },
       role: {
-        type: Sequelize.ENUM,
-        values: ['admin', 'user'],
-        defaultValue: 'user',
         allowNull: false,
+        type: Sequelize.ENUM,
+        values: _values(UserRole),
+        defaultValue: UserRole.USER
       },
       createdAt: {
         allowNull: false,
-        type: Sequelize.DATE,
+        type: Sequelize.DATE
       },
       updatedAt: {
         allowNull: false,
-        type: Sequelize.DATE,
-      },
+        type: Sequelize.DATE
+      }
     });
   },
-  async down(queryInterface, Sequelize) {
+  async down(queryInterface) {
     await queryInterface.dropTable('users');
-  },
+  }
 };

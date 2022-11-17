@@ -1,16 +1,18 @@
+const _ = require('lodash');
+
 module.exports = async (ctx, next) => {
   let { limit, offset } = ctx.query;
 
-  if (!limit || limit <= 0) {
+  limit = Number(limit);
+  offset = Number(offset);
+
+  if (!limit || limit <= 0 || _.isNaN(limit)) {
     limit = 2;
   }
 
-  if (!offset) {
+  if (!offset || offset < 0 || _.isNaN(offset)) {
     offset = 0;
   }
-
-  limit = parseInt(limit);
-  offset = parseInt(offset);
 
   ctx.state.paginate = { limit, offset };
 

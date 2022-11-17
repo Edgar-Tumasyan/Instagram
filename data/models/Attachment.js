@@ -22,6 +22,10 @@ class Attachment extends Model {
           type: DataTypes.STRING,
           allowNull: false,
         },
+        attachmentPublicId: {
+          type: DataTypes.STRING,
+          allowNull: false,
+        },
       },
       {
         sequelize,
@@ -31,7 +35,11 @@ class Attachment extends Model {
     );
   }
   static associate(models) {
-    Attachment.belongsTo(models.Post, { as: 'post', foreignKey: 'postId' });
+    Attachment.belongsTo(models.Post, {
+      as: 'post',
+      foreignKey: 'postId',
+      onDelete: 'Cascade',
+    });
 
     Attachment.belongsTo(models.User, { as: 'user', foreignKey: 'userId' });
   }

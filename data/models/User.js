@@ -1,4 +1,6 @@
 const { DataTypes, Model, literal } = require('sequelize');
+const { values: _values } = require('lodash');
+const { UserRole } = require('../lcp');
 
 class User extends Model {
   static init(sequelize) {
@@ -32,9 +34,8 @@ class User extends Model {
         },
         role: {
           type: DataTypes.ENUM,
-          values: ['admin', 'user'],
-          defaultValue: 'user',
-          allowNull: false,
+          values: _values(UserRole),
+          defaultValue: UserRole.USER,
         },
         avatar: DataTypes.STRING,
       },
@@ -42,36 +43,31 @@ class User extends Model {
         sequelize,
         timestamps: true,
         tableName: 'users',
-
-        // scopes: {
-        //   userScope: {
-        //     attributes: ['id', 'firstname', 'lastname'],
-        //   },
-        //   includeScope: {
-        //     include: [
-        //       {
-        //         model: Post,
-        //         as: 'posts',
-        //       },
-        //     ],
-        //   },
-        // },
       }
     );
   }
 
   static associate(models) {
-    User.hasMany(models.Post, { as: 'posts', foreignKey: 'userId' });
+    User.hasMany(models.Post, {
+      as: 'posts',
+      foreignKey: 'userId',
+      onDelete: 'Cascade',
+    });
 
-    User.hasMany(models.Follow, { as: 'followers', foreignKey: 'followingId' });
+    User.hasMany(models.Follow, {
+      as: 'followers',
+      foreignKey: 'followingId',
+      onDelete: 'Cascade',
+    });
 
     User.hasMany(models.Attachment, {
       as: 'attachments',
       foreignKey: 'userId',
+      onDelete: 'Cascade',
     });
   }
 
-  static addScopes(models) {
+  static addScopes() {
     User.addScope('profile', () => {
       return {
         attributes: [

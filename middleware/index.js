@@ -1,6 +1,16 @@
-const checkLimitAndOffset = require('./checkLimitAndOffset')
-const getAttachment = require('./getAttachments')
-const getAvatar = require('./getAvatar')
+const checkLimitAndOffset = require('./checkLimitAndOffset');
+const errorHandler = require('./errorHandler');
+const getAttachment = require('./getAttachments');
+const getNewAttachments = require('./getNewAttachments')
+const getAvatar = require('./getAvatar');
 const auth = require('./auth');
 
-module.exports = {getAvatar, getAttachment, auth, checkLimitAndOffset}
+
+module.exports = {
+  getAvatar,
+  getAttachment,
+  getNewAttachments,
+  auth,
+  checkLimitAndOffset,
+  errorHandler,
+};

@@ -1,4 +1,4 @@
-const StatusCodes = require('http-status-codes');
+const HttpStatus = require('http-status-codes');
 
 const { Follow } = require('../data/models');
 
@@ -6,7 +6,7 @@ const follow = async (ctx) => {
   const { profileId } = ctx.params;
 
   if (profileId === ctx.state.user.id) {
-    ctx.status = StatusCodes.BAD_REQUEST;
+    ctx.status = HttpStatus.BAD_REQUEST;
 
     return (ctx.body = { message: `You can't follow your account` });
   }
@@ -19,7 +19,7 @@ const follow = async (ctx) => {
   });
 
   if (isFollowed) {
-    ctx.status = StatusCodes.BAD_REQUEST;
+    ctx.status = HttpStatus.BAD_REQUEST;
 
     return (ctx.body = {
       message: `You already follow user with id ${profileId}`,
@@ -31,7 +31,7 @@ const follow = async (ctx) => {
     followingId: profileId,
   });
 
-  ctx.status = StatusCodes.CREATED;
+  ctx.status = HttpStatus.CREATED;
 
   ctx.body = { message: `You follow user with id: ${profileId}` };
 };
@@ -40,7 +40,7 @@ const unfollow = async (ctx) => {
   const { profileId } = ctx.params;
 
   if (profileId === ctx.state.user.id) {
-    ctx.status = StatusCodes.BAD_REQUEST;
+    ctx.status = HttpStatus.BAD_REQUEST;
 
     return (ctx.body = {
       message: `You can't follow and unfollow your account`,
@@ -55,7 +55,7 @@ const unfollow = async (ctx) => {
   });
 
   if (!isFollowed) {
-    ctx.status = StatusCodes.NOT_FOUND;
+    ctx.status = HttpStatus.NOT_FOUND;
 
     return (ctx.body = {
       message: `You don't follow user with id ${profileId}`,
@@ -66,7 +66,7 @@ const unfollow = async (ctx) => {
     where: { followerId: ctx.state.user.id, followingId: profileId },
   });
 
-  ctx.status = StatusCodes.OK;
+  ctx.status = HttpStatus.OK;
 
   return (ctx.body = { message: `You unfollow user with id: ${profileId}` });
 };

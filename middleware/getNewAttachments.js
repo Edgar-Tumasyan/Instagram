@@ -6,6 +6,6 @@ const upload = multer({ storage });
 
 module.exports = upload.fields([
   {
-    name: 'attachment',
+    name: 'newAttachments',
   },
 ]);
