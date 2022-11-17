@@ -1,5 +1,3 @@
-const HttpStatus = require('http-status-codes');
-
 module.exports = () => async (ctx, next) => {
   try {
     await next();
@@ -18,11 +16,6 @@ module.exports = () => async (ctx, next) => {
       });
     }
 
-    ctx.status = HttpStatus.INTERNAL_SERVER_ERROR;
-
-    ctx.body = {
-      status: ctx.status,
-      name: HttpStatus.getStatusText(ctx.status),
-    };
+    ctx.internalServerError();
   }
 };
