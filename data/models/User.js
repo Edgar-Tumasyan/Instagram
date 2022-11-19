@@ -65,6 +65,12 @@ class User extends Model {
       foreignKey: 'userId',
       onDelete: 'Cascade',
     });
+
+    User.hasMany(models.Like, {
+      as: 'likes',
+      foreignKey: 'userId',
+      onDelete: 'Cascade',
+    });
   }
 
   static addScopes() {

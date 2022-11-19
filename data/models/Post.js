@@ -22,6 +22,10 @@ class Post extends Model {
           type: DataTypes.UUID,
           allowNull: false,
         },
+        likesCount: {
+          type: DataTypes.INTEGER,
+          defaultValue: 0,
+        },
       },
       {
         sequelize,
@@ -43,6 +47,12 @@ class Post extends Model {
       foreignKey: 'postId',
       onDelete: 'Cascade',
     });
+
+    Post.hasMany(models.Like, {
+      as: 'likes',
+      foreignKey: 'postId',
+      onDelete: 'Cascade',
+    });
   }
 
   static addScopes(models) {
@@ -52,6 +62,7 @@ class Post extends Model {
           'id',
           'title',
           'description',
+          'likesCount',
           [
             literal(
               `(SELECT count('*') FROM attachments WHERE "postId" = "Post"."id")::int`
@@ -77,7 +88,7 @@ class Post extends Model {
 
     Post.addScope('userAllPosts', (userId) => {
       return {
-        attributes: ['id', 'title', 'description'],
+        attributes: ['id', 'title', 'description', 'likesCount'],
         include: [
           {
             attributes: ['id', 'firstname', 'lastname'],

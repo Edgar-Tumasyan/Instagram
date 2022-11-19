@@ -1,6 +1,6 @@
 const { DataTypes, Model } = require('sequelize');
 
-class Attachment extends Model {
+class Like extends Model {
   static init(sequelize) {
     return super.init(
       {
@@ -10,40 +10,47 @@ class Attachment extends Model {
           primaryKey: true,
           allowNull: false,
         },
-        postId: {
-          type: DataTypes.UUID,
-          allowNull: false,
-        },
         userId: {
           type: DataTypes.UUID,
           allowNull: false,
         },
-        attachmentUrl: {
-          type: DataTypes.STRING,
+        postId: {
+          type: DataTypes.UUID,
           allowNull: false,
         },
-        attachmentPublicId: {
-          type: DataTypes.STRING,
-          allowNull: false,
+        attachmentId: {
+          type: DataTypes.UUID,
         },
-        likesCount: { type: DataTypes.INTEGER, defaultValue: 0 },
       },
       {
         sequelize,
         timestamps: true,
-        tableName: 'attachments',
+        tableName: 'likes',
       }
     );
   }
+
   static associate(models) {
-    Attachment.belongsTo(models.Post, {
+    Like.belongsTo(models.Post, {
       as: 'post',
       foreignKey: 'postId',
-      onDelete: 'Cascade',
+      onDelete: 'CASCADE',
     });
 
-    Attachment.belongsTo(models.User, { as: 'user', foreignKey: 'userId' });
+    Like.belongsTo(models.User, {
+      as: 'user',
+      foreignKey: 'userId',
+      onDelete: 'CASCADE',
+    });
+
+    Like.belongsTo(models.Attachment, {
+      as: 'attachemnt',
+      foreignKey: 'attachmentId',
+      onDelete: 'CASCADE',
+    });
   }
+
+  static addScopes(models) {}
 }
 
-module.exports = Attachment;
+module.exports = Like;

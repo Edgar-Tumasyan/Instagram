@@ -2,7 +2,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const Cloudinary = require('../components/cloudinary');
 
-const { User, Post, Follow } = require('../data/models');
+const { User, Post } = require('../data/models');
 const config = require('../config');
 
 const create = async (ctx) => {
