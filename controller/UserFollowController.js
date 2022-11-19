@@ -57,4 +57,44 @@ const unfollow = async (ctx) => {
   ctx.ok({ message: `You unfollow user with id: ${profileId}` });
 };
 
-module.exports = { follow, unfollow };
+const getUserFollowers = async (ctx) => {
+  const { limit, offset } = ctx.state.paginate;
+
+  const { rows: followers, count: total } = await Follow.scope({
+    method: ['userFollowers', ctx.request.params.id],
+  }).findAndCountAll({
+    limit,
+    offset,
+  });
+
+  ctx.ok({
+    followers,
+    _meta: {
+      total,
+      currentPage: Math.ceil((offset + 1) / limit) || 1,
+      pageCount: Math.ceil(total / limit),
+    },
+  });
+};
+
+const getUserFollowings = async (ctx) => {
+  const { limit, offset } = ctx.state.paginate;
+
+  const { rows: followings, count: total } = await Follow.scope({
+    method: ['userFollowings', ctx.request.params.id],
+  }).findAndCountAll({
+    limit,
+    offset,
+  });
+
+  ctx.ok({
+    followings,
+    _meta: {
+      total,
+      currentPage: Math.ceil((offset + 1) / limit) || 1,
+      pageCount: Math.ceil(total / limit),
+    },
+  });
+};
+
+module.exports = { follow, unfollow, getUserFollowers, getUserFollowings };

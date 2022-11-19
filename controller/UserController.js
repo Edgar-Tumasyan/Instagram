@@ -2,7 +2,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const Cloudinary = require('../components/cloudinary');
 
-const { User } = require('../data/models');
+const { User, Post, Follow } = require('../data/models');
 const config = require('../config');
 
 const create = async (ctx) => {
@@ -126,4 +126,32 @@ const remove = async (ctx) => {
   ctx.noContent();
 };
 
-module.exports = { create, login, uploadAvatar, findAll, findOne, remove };
+const getUserPosts = async (ctx) => {
+  const { limit, offset } = ctx.state.paginate;
+
+  const { rows: posts, count: total } = await Post.scope({
+    method: ['userAllPosts', ctx.request.params.id],
+  }).findAndCountAll({
+    limit,
+    offset,
+  });
+
+  ctx.ok({
+    posts,
+    _meta: {
+      total,
+      currentPage: Math.ceil((offset + 1) / limit) || 1,
+      pageCount: Math.ceil(total / limit),
+    },
+  });
+};
+
+module.exports = {
+  create,
+  login,
+  uploadAvatar,
+  findAll,
+  findOne,
+  remove,
+  getUserPosts,
+};

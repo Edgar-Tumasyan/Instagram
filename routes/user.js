@@ -9,6 +9,12 @@ const router = new Router({
 
 router.get('/', auth, checkLimitAndOffset, UserController.findAll);
 router.get('/:id', auth, UserController.findOne);
+router.get(
+  '/posts/:id',
+  auth,
+  checkLimitAndOffset,
+  UserController.getUserPosts
+);
 
 router.post('/', UserController.create);
 router.post('/login', UserController.login);

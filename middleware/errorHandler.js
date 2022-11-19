@@ -2,7 +2,7 @@ module.exports = () => async (ctx, next) => {
   try {
     await next();
   } catch (err) {
-    console.log();
+    console.error(err);
 
     if (err.name === 'SequelizeDatabaseError') {
       return ctx.unprocessable_entity({

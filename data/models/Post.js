@@ -74,6 +74,26 @@ class Post extends Model {
         ],
       };
     });
+
+    Post.addScope('userAllPosts', (userId) => {
+      return {
+        attributes: ['id', 'title', 'description'],
+        include: [
+          {
+            attributes: ['id', 'firstname', 'lastname'],
+            model: models.User,
+            as: 'user',
+          },
+          {
+            attributes: ['id', 'attachmentUrl'],
+            model: models.Attachment,
+            as: 'attachments',
+            separate: true,
+          },
+        ],
+        where: { userId },
+      };
+    });
   }
 }
 
