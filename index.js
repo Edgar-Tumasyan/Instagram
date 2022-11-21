@@ -9,9 +9,8 @@ cloudinary.config(config.cloudinary);
 
 const port = config.port || 3001;
 
-app.use(errorHandler());
-
 app.use(require('koa-bodyparser')());
+
 app.use(
   require('koa-respond')({
     statusMethods: {
@@ -19,6 +18,8 @@ app.use(
     },
   })
 );
+
+app.use(errorHandler());
 
 app.use(Routes.routes());
 app.use(Routes.allowedMethods());
