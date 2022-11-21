@@ -2,23 +2,19 @@ const Router = require('koa-router');
 
 const PostController = require('../controller/PostController');
 
-const {
-  auth,
-  getAttachment,
-  getNewAttachments,
-  checkLimitAndOffset,
-} = require('../middleware');
+const { auth } = require('../middleware');
 
 const router = new Router({
   prefix: '/posts',
 });
 
-router.get('/', auth, checkLimitAndOffset, PostController.findAll);
+router.get('/', auth, PostController.findAll);
 router.get('/:id', auth, PostController.findOne);
+router.get('/profile/:profileId', auth, PostController.getUserPosts);
 
-router.post('/', auth, getAttachment, PostController.create);
+router.post('/', auth, PostController.create);
 
-router.put('/:id', auth, getNewAttachments, PostController.update);
+router.put('/:id', auth, PostController.update);
 
 router.delete('/:id', auth, PostController.remove);
 

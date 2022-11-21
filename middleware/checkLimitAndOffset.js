@@ -1,6 +1,6 @@
 const _ = require('lodash');
 
-module.exports = async (ctx, next) => {
+module.exports = () => async (ctx, next) => {
   let { limit, offset } = ctx.query;
 
   limit = Number(limit);

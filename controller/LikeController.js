@@ -1,6 +1,6 @@
 const { Post, Like } = require('../data/models');
 
-const likePost = async (ctx) => {
+const create = async (ctx) => {
   const { postId } = ctx.params;
 
   const post = await Post.findByPk(postId);
@@ -21,14 +21,12 @@ const likePost = async (ctx) => {
 
   await Like.create({ userId, postId });
 
-  await Post.increment('likesCount', { where: { id: postId } });
-
   const data = await Post.scope({ method: ['expand'] }).findByPk(postId);
 
-  ctx.created({ post: data });
+  return ctx.created({ post: data });
 };
 
-const dislike = async (ctx) => {
+const remove = async (ctx) => {
   const { postId } = ctx.params;
 
   const post = await Post.findByPk(postId);
@@ -49,9 +47,7 @@ const dislike = async (ctx) => {
 
   await Like.destroy({ where: { userId, postId } });
 
-  await Post.decrement('likesCount', { where: { id: postId } });
-
-  ctx.noContent();
+  return ctx.noContent();
 };
 
-module.exports = { likePost, dislike };
+module.exports = { create, remove };

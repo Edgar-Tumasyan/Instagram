@@ -27,9 +27,9 @@ class Follow extends Model {
     );
   }
   static associate(models) {
-    Follow.belongsTo(models.User, { as: 'user', foreignKey: 'followerId' });
+    Follow.belongsTo(models.User, { as: 'follower', foreignKey: 'followerId' });
 
-    Follow.belongsTo(models.User, { as: 'users', foreignKey: 'followingId' });
+    Follow.belongsTo(models.User, { as: 'following', foreignKey: 'followingId' });
   }
 
   static addScopes(models) {
@@ -40,7 +40,7 @@ class Follow extends Model {
           {
             attributes: ['firstname', 'lastname'],
             model: models.User,
-            as: 'user',
+            as: 'follower',
           },
         ],
         where: { followingId },

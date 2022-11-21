@@ -16,6 +16,6 @@ module.exports = () => async (ctx, next) => {
       });
     }
 
-    ctx.internalServerError();
+    return ctx.internalServerError();
   }
 };

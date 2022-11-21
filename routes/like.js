@@ -4,11 +4,11 @@ const LikeController = require('../controller/LikeController');
 const { auth } = require('../middleware');
 
 const router = new Router({
-  prefix: '/likes',
+  prefix: '/posts/:postId/likes',
 });
 
-router.post('/:postId', auth, LikeController.likePost);
+router.post('/', auth, LikeController.create);
 
-router.delete('/:postId', auth, LikeController.dislike);
+router.delete('/', auth, LikeController.remove);
 
 module.exports = router;

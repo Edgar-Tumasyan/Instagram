@@ -1,5 +1,60 @@
-const Cloudinary = require('../components/cloudinary');
+const Cloudinary = require('../components/Cloudinary');
 const { Post, Attachment, sequelize } = require('../data/models');
+
+const findAll = async (ctx) => {
+  const { limit, offset } = ctx.state.paginate;
+
+  const { rows: posts, count: total } = await Post.scope({
+    method: ['expand'],
+  }).findAndCountAll({
+    offset,
+    limit,
+  });
+
+  return ctx.ok({
+    posts,
+    _meta: {
+      total,
+      limit,
+      pageCount: Math.ceil(total / limit),
+      currentPage: Math.ceil((offset + 1) / limit) || 1,
+    },
+  });
+};
+
+const findOne = async (ctx) => {
+  const post = await Post.scope({ method: ['expand'] }).findByPk(
+    ctx.request.params.id
+  );
+
+  if (!post) {
+    return ctx.notFound({
+      message: `No post with id ${ctx.request.params.id}`,
+    });
+  }
+
+  return ctx.ok({ post });
+};
+
+const getUserPosts = async (ctx) => {
+  const { limit, offset } = ctx.state.paginate;
+
+  const { rows: posts, count: total } = await Post.scope({
+    method: ['userAllPosts', ctx.request.params.profileId],
+  }).findAndCountAll({
+    limit,
+    offset,
+  });
+
+  return ctx.ok({
+    posts,
+    _meta: {
+      total,
+      currentPage: Math.ceil((offset + 1) / limit) || 1,
+      pageCount: Math.ceil(total / limit),
+    },
+  });
+};
 
 const create = async (ctx) => {
   const reqAttachments = ctx.request.files.attachment;
@@ -58,42 +113,7 @@ const create = async (ctx) => {
     });
   });
 
-  ctx.created({ post });
-};
-
-const findAll = async (ctx) => {
-  const { limit, offset } = ctx.state.paginate;
-
-  const { rows: posts, count: total } = await Post.scope({
-    method: ['expand'],
-  }).findAndCountAll({
-    offset,
-    limit,
-  });
-
-  ctx.ok({
-    posts,
-    _meta: {
-      total,
-      limit,
-      pageCount: Math.ceil(total / limit),
-      currentPage: Math.ceil((offset + 1) / limit) || 1,
-    },
-  });
-};
-
-const findOne = async (ctx) => {
-  const post = await Post.scope({ method: ['expand'] }).findByPk(
-    ctx.request.params.id
-  );
-
-  if (!post) {
-    return ctx.notFound({
-      message: `No post with id ${ctx.request.params.id}`,
-    });
-  }
-
-  ctx.ok({ post });
+  return ctx.created({ post });
 };
 
 const update = async (ctx) => {
@@ -113,9 +133,9 @@ const update = async (ctx) => {
 
   const { description, title, deleteAttachments } = ctx.request.body;
 
-  const newAttachments = ctx.request.files?.newAttachments;
+  const attachments = ctx.request.files?.attachments;
 
-  if (!description && !title && !newAttachments && !deleteAttachments) {
+  if (!description && !title && !attachments && !deleteAttachments) {
     return ctx.badRequest({ message: 'No values to updated' });
   }
 
@@ -130,17 +150,17 @@ const update = async (ctx) => {
 
     await post.save({ transaction: t });
 
-    if (newAttachments) {
-      const attachments = [];
+    if (attachments) {
+      const newAttachments = [];
 
-      for (const file of newAttachments) {
+      for (const file of attachments) {
         const attachment = await Cloudinary.upload(file.path, 'attachments');
 
         const attachmentUrl = attachment.secure_url;
 
         const attachmentPublicId = attachment.public_id;
 
-        attachments.push({
+        newAttachments.push({
           postId: post.id,
           userId: ctx.state.user.id,
           attachmentUrl,
@@ -148,7 +168,7 @@ const update = async (ctx) => {
         });
       }
 
-      await Attachment.bulkCreate(attachments, { transaction: t });
+      await Attachment.bulkCreate(newAttachments, { transaction: t });
     }
 
     if (deleteAttachments) {
@@ -165,7 +185,7 @@ const update = async (ctx) => {
 
   const data = await Post.scope({ method: ['expand'] }).findByPk(post.id);
 
-  ctx.created({ post: data });
+  return ctx.created({ post: data });
 };
 
 const remove = async (ctx) => {
@@ -183,7 +203,7 @@ const remove = async (ctx) => {
 
   await Post.destroy({ where: { id: post.id } });
 
-  ctx.noContent();
+  return ctx.noContent();
 };
 
-module.exports = { create, findAll, findOne, update, remove };
+module.exports = { findAll, findOne, getUserPosts, create, update, remove };

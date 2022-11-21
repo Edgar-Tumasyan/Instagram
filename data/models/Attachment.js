@@ -26,7 +26,6 @@ class Attachment extends Model {
           type: DataTypes.STRING,
           allowNull: false,
         },
-        likesCount: { type: DataTypes.INTEGER, defaultValue: 0 },
       },
       {
         sequelize,
@@ -39,7 +38,6 @@ class Attachment extends Model {
     Attachment.belongsTo(models.Post, {
       as: 'post',
       foreignKey: 'postId',
-      onDelete: 'Cascade',
     });
 
     Attachment.belongsTo(models.User, { as: 'user', foreignKey: 'userId' });

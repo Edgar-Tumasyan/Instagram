@@ -26,14 +26,6 @@ module.exports = {
         },
         onDelete: 'Cascade',
       },
-      attachmentId: {
-        type: DataTypes.UUID,
-        references: {
-          model: 'attachments',
-          key: 'id',
-        },
-        onDelete: 'Cascade',
-      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE,

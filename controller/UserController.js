@@ -1,9 +1,53 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const Cloudinary = require('../components/cloudinary');
+const Cloudinary = require('../components/Cloudinary');
 
-const { User, Post, Follow } = require('../data/models');
+const { User, Follow } = require('../data/models');
 const config = require('../config');
+
+const findAll = async (ctx) => {
+  const { limit, offset } = ctx.state.paginate;
+  console.log(limit, offset);
+
+  const { rows: users, count: total } = await User.scope({
+    method: ['profile'],
+  }).findAndCountAll({
+    offset,
+    limit,
+    distinct: true,
+  });
+
+  ctx.ok({
+    users,
+    _meta: {
+      total,
+      currentPage: Math.ceil((offset + 1) / limit) || 1,
+      pageCount: Math.ceil(total / limit),
+    },
+  });
+};
+
+const findOne = async (ctx) => {
+  const user = await User.scope({ method: ['profile'] }).findByPk(
+    ctx.request.params.id
+  );
+
+  if (!user) {
+    return ctx.notFound({
+      message: `No user with id ${ctx.request.params.id}`,
+    });
+  }
+
+  const followed = await Follow.findOne({
+    where: { followerId: ctx.state.user.id, followingId: user.id },
+  });
+
+  if (!followed) {
+    return ctx.ok({ user, followed: false });
+  }
+
+  ctx.ok({ user, followed: true });
+};
 
 const create = async (ctx) => {
   const { firstname, lastname, email, password } = ctx.request.body;
@@ -57,7 +101,7 @@ const login = async (ctx) => {
 };
 
 const uploadAvatar = async (ctx) => {
-  const reqAvatar = ctx.request.files?.avatar;
+  const reqAvatar = ctx.request.files?.attachments;
 
   if (!reqAvatar || !reqAvatar[0].mimetype.startsWith('image')) {
     return ctx.badRequest({
@@ -80,52 +124,11 @@ const uploadAvatar = async (ctx) => {
     }
   );
 
-  const { password, email, createdAt, updatedAt, ...data } = ctx.state.user;
-
-  ctx.created({ user: data });
-};
-
-const findAll = async (ctx) => {
-  const { limit, offset } = ctx.state.paginate;
-
-  const { rows: users, count: total } = await User.scope({
-    method: ['profile'],
-  }).findAndCountAll({
-    offset,
-    limit,
-    distinct: true,
-  });
-
-  ctx.ok({
-    users,
-    _meta: {
-      total,
-      currentPage: Math.ceil((offset + 1) / limit) || 1,
-      pageCount: Math.ceil(total / limit),
-    },
-  });
-};
-
-const findOne = async (ctx) => {
   const user = await User.scope({ method: ['profile'] }).findByPk(
-    ctx.request.params.id
+    ctx.state.user.id
   );
 
-  if (!user) {
-    return ctx.notFound({
-      message: `No user with id ${ctx.request.params.id}`,
-    });
-  }
-
-  const followed = await Follow.findOne({
-    where: { followerId: ctx.state.user.id, followingId: user.id },
-  });
-
-  if (!followed) {
-    return ctx.ok({ user, followed: false });
-  }
-
-  ctx.ok({ user, followed: true });
+  ctx.created({ user });
 };
 
 const remove = async (ctx) => {
@@ -134,32 +137,11 @@ const remove = async (ctx) => {
   ctx.noContent();
 };
 
-const getUserPosts = async (ctx) => {
-  const { limit, offset } = ctx.state.paginate;
-
-  const { rows: posts, count: total } = await Post.scope({
-    method: ['userAllPosts', ctx.request.params.id],
-  }).findAndCountAll({
-    limit,
-    offset,
-  });
-
-  ctx.ok({
-    posts,
-    _meta: {
-      total,
-      currentPage: Math.ceil((offset + 1) / limit) || 1,
-      pageCount: Math.ceil(total / limit),
-    },
-  });
-};
-
 module.exports = {
+  findAll,
+  findOne,
   create,
   login,
   uploadAvatar,
-  findAll,
-  findOne,
   remove,
-  getUserPosts,
 };

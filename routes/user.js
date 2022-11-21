@@ -1,24 +1,18 @@
 const Router = require('koa-router');
 
 const UserController = require('../controller/UserController');
-const { auth, getAvatar, checkLimitAndOffset } = require('../middleware');
+const { auth } = require('../middleware');
 
 const router = new Router({
   prefix: '/users',
 });
 
-router.get('/', auth, checkLimitAndOffset, UserController.findAll);
+router.get('/', auth, UserController.findAll);
 router.get('/:id', auth, UserController.findOne);
-router.get(
-  '/posts/:id',
-  auth,
-  checkLimitAndOffset,
-  UserController.getUserPosts
-);
 
 router.post('/', UserController.create);
 router.post('/login', UserController.login);
-router.post('/avatar', auth, getAvatar, UserController.uploadAvatar);
+router.post('/avatar', auth, UserController.uploadAvatar);
 
 router.delete('/', auth, UserController.remove);
 

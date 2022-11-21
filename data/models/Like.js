@@ -18,9 +18,6 @@ class Like extends Model {
           type: DataTypes.UUID,
           allowNull: false,
         },
-        attachmentId: {
-          type: DataTypes.UUID,
-        },
       },
       {
         sequelize,
@@ -34,19 +31,11 @@ class Like extends Model {
     Like.belongsTo(models.Post, {
       as: 'post',
       foreignKey: 'postId',
-      onDelete: 'CASCADE',
     });
 
     Like.belongsTo(models.User, {
       as: 'user',
       foreignKey: 'userId',
-      onDelete: 'CASCADE',
-    });
-
-    Like.belongsTo(models.Attachment, {
-      as: 'attachemnt',
-      foreignKey: 'attachmentId',
-      onDelete: 'CASCADE',
     });
   }
 

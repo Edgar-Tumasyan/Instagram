@@ -1,6 +1,46 @@
 const { Follow } = require('../data/models');
 
-const follow = async (ctx) => {
+const getUserFollowers = async (ctx) => {
+  const { limit, offset } = ctx.state.paginate;
+
+  const { rows: followers, count: total } = await Follow.scope({
+    method: ['userFollowers', ctx.request.params.profileId],
+  }).findAndCountAll({
+    limit,
+    offset,
+  });
+
+  return ctx.ok({
+    followers,
+    _meta: {
+      total,
+      currentPage: Math.ceil((offset + 1) / limit) || 1,
+      pageCount: Math.ceil(total / limit),
+    },
+  });
+};
+
+const getUserFollowings = async (ctx) => {
+  const { limit, offset } = ctx.state.paginate;
+
+  const { rows: followings, count: total } = await Follow.scope({
+    method: ['userFollowings', ctx.request.params.profileId],
+  }).findAndCountAll({
+    limit,
+    offset,
+  });
+
+  return ctx.ok({
+    followings,
+    _meta: {
+      total,
+      currentPage: Math.ceil((offset + 1) / limit) || 1,
+      pageCount: Math.ceil(total / limit),
+    },
+  });
+};
+
+const create = async (ctx) => {
   const { profileId } = ctx.params;
 
   if (profileId === ctx.state.user.id) {
@@ -15,7 +55,7 @@ const follow = async (ctx) => {
   });
 
   if (isFollowed) {
-    ctx.badRequest({
+    return ctx.badRequest({
       message: `You already follow user with id ${profileId}`,
     });
   }
@@ -25,10 +65,10 @@ const follow = async (ctx) => {
     followingId: profileId,
   });
 
-  ctx.created({ message: `You follow user with id: ${profileId}` });
+  return ctx.created({ message: `You follow user with id: ${profileId}` });
 };
 
-const unfollow = async (ctx) => {
+const remove = async (ctx) => {
   const { profileId } = ctx.params;
 
   if (profileId === ctx.state.user.id) {
@@ -45,7 +85,7 @@ const unfollow = async (ctx) => {
   });
 
   if (!isFollowed) {
-    ctx.notFound({
+    return ctx.notFound({
       message: `You don't follow user with id ${profileId}`,
     });
   }
@@ -54,47 +94,7 @@ const unfollow = async (ctx) => {
     where: { followerId: ctx.state.user.id, followingId: profileId },
   });
 
-  ctx.ok({ message: `You unfollow user with id: ${profileId}` });
+  return ctx.ok({ message: `You unfollow user with id: ${profileId}` });
 };
 
-const getUserFollowers = async (ctx) => {
-  const { limit, offset } = ctx.state.paginate;
-
-  const { rows: followers, count: total } = await Follow.scope({
-    method: ['userFollowers', ctx.request.params.id],
-  }).findAndCountAll({
-    limit,
-    offset,
-  });
-
-  ctx.ok({
-    followers,
-    _meta: {
-      total,
-      currentPage: Math.ceil((offset + 1) / limit) || 1,
-      pageCount: Math.ceil(total / limit),
-    },
-  });
-};
-
-const getUserFollowings = async (ctx) => {
-  const { limit, offset } = ctx.state.paginate;
-
-  const { rows: followings, count: total } = await Follow.scope({
-    method: ['userFollowings', ctx.request.params.id],
-  }).findAndCountAll({
-    limit,
-    offset,
-  });
-
-  ctx.ok({
-    followings,
-    _meta: {
-      total,
-      currentPage: Math.ceil((offset + 1) / limit) || 1,
-      pageCount: Math.ceil(total / limit),
-    },
-  });
-};
-
-module.exports = { follow, unfollow, getUserFollowers, getUserFollowings };
+module.exports = { getUserFollowers, getUserFollowings, create, remove };

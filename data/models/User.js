@@ -51,25 +51,21 @@ class User extends Model {
     User.hasMany(models.Post, {
       as: 'posts',
       foreignKey: 'userId',
-      onDelete: 'Cascade',
     });
 
     User.hasMany(models.Follow, {
       as: 'followers',
+      foreignKey: 'followerId',
+    });
+
+    User.hasMany(models.Follow, {
+      as: 'followings',
       foreignKey: 'followingId',
-      onDelete: 'Cascade',
     });
 
     User.hasMany(models.Attachment, {
       as: 'attachments',
       foreignKey: 'userId',
-      onDelete: 'Cascade',
-    });
-
-    User.hasMany(models.Like, {
-      as: 'likes',
-      foreignKey: 'userId',
-      onDelete: 'Cascade',
     });
   }
 
@@ -80,6 +76,7 @@ class User extends Model {
           'id',
           'firstname',
           'lastname',
+          'avatar',
           [
             literal(
               `(SELECT count('*') FROM posts WHERE "userId" = "User"."id")::int`
@@ -91,6 +88,12 @@ class User extends Model {
               `(SELECT count('*') FROM follows WHERE "followingId" = "User"."id")::int`
             ),
             'followersCount',
+          ],
+          [
+            literal(
+              `(SELECT count('*') FROM follows WHERE "followerId" = "User"."id")::int`
+            ),
+            'followingsCount',
           ],
         ],
       };
