@@ -2,7 +2,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const Cloudinary = require('../components/cloudinary');
 
-const { User, Post } = require('../data/models');
+const { User, Post, Follow } = require('../data/models');
 const config = require('../config');
 
 const create = async (ctx) => {
@@ -117,7 +117,15 @@ const findOne = async (ctx) => {
     });
   }
 
-  ctx.ok({ user });
+  const followed = await Follow.findOne({
+    where: { followerId: ctx.state.user.id, followingId: user.id },
+  });
+
+  if (!followed) {
+    return ctx.ok({ user, followed: false });
+  }
+
+  ctx.ok({ user, followed: true });
 };
 
 const remove = async (ctx) => {
