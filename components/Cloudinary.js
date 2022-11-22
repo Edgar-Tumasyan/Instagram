@@ -9,7 +9,7 @@ class Cloudinary {
   }
 
   static async delete(file) {
-    return await cloudinary.uploader.destroy(file);
+    await cloudinary.uploader.destroy(file);
   }
 }
 

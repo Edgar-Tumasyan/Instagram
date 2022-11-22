@@ -1,4 +1,4 @@
-const { DataTypes, Model, literal } = require('sequelize');
+const { DataTypes, Model } = require('sequelize');
 
 class Follow extends Model {
   static init(sequelize) {
@@ -29,44 +29,9 @@ class Follow extends Model {
   static associate(models) {
     Follow.belongsTo(models.User, { as: 'follower', foreignKey: 'followerId' });
 
-    Follow.belongsTo(models.User, { as: 'following', foreignKey: 'followingId' });
-  }
-
-  static addScopes(models) {
-    Follow.addScope('userFollowers', (followingId) => {
-      return {
-        attributes: ['id', 'followerId'],
-        include: [
-          {
-            attributes: ['firstname', 'lastname'],
-            model: models.User,
-            as: 'follower',
-          },
-        ],
-        where: { followingId },
-      };
-    });
-
-    Follow.addScope('userFollowings', (followerId) => {
-      return {
-        attributes: [
-          'id',
-          'followingId',
-          [
-            literal(
-              `(SELECT firstname FROM users WHERE "id" = "Follow"."followingId")`
-            ),
-            'firstname',
-          ],
-          [
-            literal(
-              `(SELECT lastname FROM users WHERE "id" = "Follow"."followingId")`
-            ),
-            'lastname',
-          ],
-        ],
-        where: { followerId },
-      };
+    Follow.belongsTo(models.User, {
+      as: 'following',
+      foreignKey: 'followingId',
     });
   }
 }

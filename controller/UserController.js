@@ -2,8 +2,10 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const Cloudinary = require('../components/Cloudinary');
 
-const { User, Follow, Like } = require('../data/models');
+const { User, Follow } = require('../data/models');
 const config = require('../config');
+
+//create user update functionality
 
 const findAll = async (ctx) => {
   const { limit, offset } = ctx.state.paginate;
@@ -13,7 +15,6 @@ const findAll = async (ctx) => {
   }).findAndCountAll({
     offset,
     limit,
-    distinct: true,
   });
 
   ctx.ok({
@@ -27,9 +28,9 @@ const findAll = async (ctx) => {
 };
 
 const findOne = async (ctx) => {
-  const user = await User.scope({ method: ['profile'] }).findByPk(
-    ctx.request.params.id
-  );
+  const id = ctx.request.params.id;
+
+  const user = await User.scope({ method: ['profile'] }).findByPk(id);
 
   if (!user) {
     return ctx.notFound({
@@ -38,31 +39,14 @@ const findOne = async (ctx) => {
   }
 
   const followed = await Follow.findOne({
-    where: { followerId: ctx.state.user.id, followingId: user.id },
+    where: { followerId: ctx.state.user.id, followingId: id },
   });
 
   if (!followed) {
     return ctx.ok({ user, followed: false });
   }
 
-  ctx.ok({ user, followed: true });
-};
-
-const postLikesUsers = async (ctx) => {
-  const { limit, offset } = ctx.state.paginate;
-
-  const { rows: users, count: total } = await Like.scope({
-    method: ['likesUsers', ctx.request.params.postId],
-  }).findAndCountAll({ limit, offset });
-
-  ctx.body = {
-    users,
-    _meta: {
-      total,
-      currentPage: Math.ceil((offset + 1) / limit) || 1,
-      pageCount: Math.ceil(total / limit),
-    },
-  };
+  return ctx.ok({ user, followed: true });
 };
 
 const create = async (ctx) => {
@@ -87,9 +71,7 @@ const create = async (ctx) => {
     password: hashPassword,
   });
 
-  const { password: userPassword, ...data } = newUser.dataValues;
-
-  ctx.created({ user: data });
+  ctx.created({ user: newUser });
 };
 
 const login = async (ctx) => {
@@ -111,9 +93,7 @@ const login = async (ctx) => {
     { expiresIn: config.TOKEN_EXPIRESIN }
   );
 
-  const { password: userPassword, ...data } = user.dataValues;
-
-  ctx.ok({ user: data, token });
+  ctx.ok({ user, token });
 };
 
 const uploadAvatar = async (ctx) => {
@@ -131,24 +111,36 @@ const uploadAvatar = async (ctx) => {
 
   const avatar = await Cloudinary.upload(reqAvatar[0].path, 'avatars');
 
+  const id = ctx.state.user.id;
+
   await User.update(
-    { avatar: avatar.secure_url },
+    { avatar: avatar.secure_url, avatarPublicId: avatar.public_id },
     {
       where: {
-        id: ctx.state.user.id,
+        id,
       },
     }
   );
 
-  const user = await User.scope({ method: ['profile'] }).findByPk(
-    ctx.state.user.id
-  );
+  const user = await User.scope({ method: ['profile'] }).findByPk(id);
 
   ctx.created({ user });
 };
 
 const remove = async (ctx) => {
-  await User.destroy({ where: { id: ctx.state.user.id } });
+  const id = ctx.state.user.id;
+
+  const user = await User.findByPk(id);
+
+  if (!user) {
+    return ctx.notFound({ message: `No user with id: ${id}` });
+  }
+
+  if (user.avatar) {
+    await Cloudinary.delete(user.avatarPublicId);
+  }
+
+  await User.destroy({ where: { id } });
 
   ctx.noContent();
 };
@@ -156,7 +148,6 @@ const remove = async (ctx) => {
 module.exports = {
   findAll,
   findOne,
-  postLikesUsers,
   create,
   login,
   uploadAvatar,

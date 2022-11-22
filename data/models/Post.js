@@ -96,6 +96,12 @@ class Post extends Model {
             ),
             'likesCount',
           ],
+          [
+            literal(
+              `(SELECT count('*') FROM attachments WHERE "postId" = "Post"."id")::int`
+            ),
+            'attachmentsCount',
+          ],
         ],
         include: [
           {

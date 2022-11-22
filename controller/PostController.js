@@ -1,4 +1,5 @@
 const Cloudinary = require('../components/Cloudinary');
+const _ = require('lodash');
 const { Post, Attachment, sequelize } = require('../data/models');
 
 const findAll = async (ctx) => {
@@ -23,9 +24,9 @@ const findAll = async (ctx) => {
 };
 
 const findOne = async (ctx) => {
-  const post = await Post.scope({ method: ['expand'] }).findByPk(
-    ctx.request.params.id
-  );
+  const id = ctx.request.params.id;
+
+  const post = await Post.scope({ method: ['expand'] }).findByPk(id);
 
   if (!post) {
     return ctx.notFound({
@@ -39,8 +40,10 @@ const findOne = async (ctx) => {
 const getUserPosts = async (ctx) => {
   const { limit, offset } = ctx.state.paginate;
 
+  const userId = ctx.request.params.profileId;
+
   const { rows: posts, count: total } = await Post.scope({
-    method: ['userAllPosts', ctx.request.params.profileId],
+    method: ['userAllPosts', userId],
   }).findAndCountAll({
     limit,
     offset,
@@ -57,7 +60,7 @@ const getUserPosts = async (ctx) => {
 };
 
 const create = async (ctx) => {
-  const reqAttachments = ctx.request.files.attachment;
+  const reqAttachments = ctx.request.files?.attachments;
 
   if (reqAttachments) {
     for (const attachment of reqAttachments) {
@@ -81,13 +84,13 @@ const create = async (ctx) => {
       { transaction: t }
     );
 
-    console.log(!reqAttachments);
+    const postId = newPost.id;
 
     if (!reqAttachments) {
-      return { newPost, attachments: [] };
+      return await Post.scope({ method: ['expand'] }).findByPk(postId, {
+        transaction: t,
+      });
     }
-
-    const postId = newPost.id;
 
     const attachments = [];
 
@@ -117,9 +120,9 @@ const create = async (ctx) => {
 };
 
 const update = async (ctx) => {
-  const post = await Post.scope({ method: ['expand'] }).findByPk(
-    ctx.request.params.id
-  );
+  const id = ctx.request.params.id;
+
+  const post = await Post.scope({ method: ['expand'] }).findByPk(id);
 
   if (!post) {
     return ctx.notFound({
@@ -172,11 +175,21 @@ const update = async (ctx) => {
     }
 
     if (deleteAttachments) {
-      for (const attachment of deleteAttachments) {
-        await Cloudinary.delete(attachment);
+      if (_.isArray(deleteAttachments)) {
+        for (const attachment of deleteAttachments) {
+          console.log(typeof attachment);
+          await Cloudinary.delete(attachment);
+
+          await Attachment.destroy(
+            { where: { attachmentPublicId: attachment } },
+            { transaction: t }
+          );
+        }
+      } else {
+        await Cloudinary.delete(deleteAttachments);
 
         await Attachment.destroy(
-          { where: { attachmentPublicId: attachment } },
+          { where: { attachmentPublicId: deleteAttachments } },
           { transaction: t }
         );
       }
@@ -189,7 +202,9 @@ const update = async (ctx) => {
 };
 
 const remove = async (ctx) => {
-  const post = await Post.findByPk(ctx.request.params.id);
+  const postId = ctx.request.params.id;
+
+  const post = await Post.findByPk(postId);
 
   if (!post) {
     return ctx.notFound({
@@ -201,7 +216,17 @@ const remove = async (ctx) => {
     ctx.unauthorized({ message: `You can delete only your posts` });
   }
 
-  await Post.destroy({ where: { id: post.id } });
+  const attachments = await Attachment.findAll({ where: { postId } });
+
+  if (attachments) {
+    for (const attachment of attachments) {
+      await Cloudinary.delete(attachment.dataValues.attachmentPublicId);
+
+      await Attachment.destroy({ where: { id: attachment.dataValues.id } });
+    }
+  }
+
+  await Post.destroy({ where: { id: postId } });
 
   return ctx.noContent();
 };

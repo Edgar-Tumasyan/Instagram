@@ -7,6 +7,8 @@ const router = new Router({
   prefix: '/posts/:postId/likes',
 });
 
+router.get('/users', auth, LikeController.postLikesUsers);
+
 router.post('/', auth, LikeController.create);
 
 router.delete('/', auth, LikeController.remove);

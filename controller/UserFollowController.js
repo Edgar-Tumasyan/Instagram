@@ -1,17 +1,16 @@
-const { Follow } = require('../data/models');
+const { Follow, User } = require('../data/models');
 
 const getUserFollowers = async (ctx) => {
   const { limit, offset } = ctx.state.paginate;
 
-  const { rows: followers, count: total } = await Follow.scope({
-    method: ['userFollowers', ctx.request.params.profileId],
-  }).findAndCountAll({
-    limit,
-    offset,
-  });
+  const followingId = ctx.request.params.profileId;
+
+  const { rows: users, count: total } = await User.scope({
+    method: ['followers', followingId],
+  }).findAndCountAll({ offset, limit });
 
   return ctx.ok({
-    followers,
+    users,
     _meta: {
       total,
       currentPage: Math.ceil((offset + 1) / limit) || 1,
@@ -23,15 +22,17 @@ const getUserFollowers = async (ctx) => {
 const getUserFollowings = async (ctx) => {
   const { limit, offset } = ctx.state.paginate;
 
-  const { rows: followings, count: total } = await Follow.scope({
-    method: ['userFollowings', ctx.request.params.profileId],
+  const followerId = ctx.request.params.profileId;
+
+  const { rows: users, count: total } = await User.scope({
+    method: ['followings', followerId],
   }).findAndCountAll({
-    limit,
     offset,
+    limit,
   });
 
   return ctx.ok({
-    followings,
+    users,
     _meta: {
       total,
       currentPage: Math.ceil((offset + 1) / limit) || 1,

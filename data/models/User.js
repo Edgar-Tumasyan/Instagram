@@ -1,5 +1,5 @@
-const { DataTypes, Model, literal } = require('sequelize');
-const { values: _values } = require('lodash');
+const { DataTypes, Model, literal, Op } = require('sequelize');
+const _ = require('lodash');
 const { UserRole } = require('../lcp');
 
 class User extends Model {
@@ -34,10 +34,11 @@ class User extends Model {
         },
         role: {
           type: DataTypes.ENUM,
-          values: _values(UserRole),
+          values: _.values(UserRole),
           defaultValue: UserRole.USER,
         },
         avatar: DataTypes.STRING,
+        avatarPublicId: DataTypes.STRING,
       },
       {
         sequelize,
@@ -69,7 +70,7 @@ class User extends Model {
     });
   }
 
-  static addScopes() {
+  static addScopes(models) {
     User.addScope('profile', () => {
       return {
         attributes: [
@@ -98,6 +99,54 @@ class User extends Model {
         ],
       };
     });
+
+    User.addScope('followers', (followingId) => {
+      return {
+        attributes: ['id', 'firstname', 'lastname', 'avatar'],
+        where: {
+          id: {
+            [Op.in]: models.Follow.generateNestedQuery({
+              attributes: ['followerId'],
+              where: { followingId },
+            }),
+          },
+        },
+      };
+    });
+
+    User.addScope('followings', (followerId) => {
+      return {
+        attributes: ['id', 'firstname', 'lastname', 'avatar'],
+        where: {
+          id: {
+            [Op.in]: models.Follow.generateNestedQuery({
+              attributes: ['followingId'],
+              where: { followerId },
+            }),
+          },
+        },
+      };
+    });
+
+    User.addScope('likesUsers', (postId) => {
+      return {
+        attributes: ['id', 'firstname', 'lastname', 'avatar'],
+        where: {
+          id: {
+            [Op.in]: models.Like.generateNestedQuery({
+              attributes: ['userId'],
+              where: { postId },
+            }),
+          },
+        },
+      };
+    });
+  }
+
+  toJSON() {
+    const data = this.get();
+
+    return _.omit(data, 'password', 'role', 'createdAt', 'updatedAt');
   }
 }
 
