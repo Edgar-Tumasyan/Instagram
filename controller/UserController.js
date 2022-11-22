@@ -2,12 +2,11 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const Cloudinary = require('../components/Cloudinary');
 
-const { User, Follow } = require('../data/models');
+const { User, Follow, Like } = require('../data/models');
 const config = require('../config');
 
 const findAll = async (ctx) => {
   const { limit, offset } = ctx.state.paginate;
-  console.log(limit, offset);
 
   const { rows: users, count: total } = await User.scope({
     method: ['profile'],
@@ -47,6 +46,23 @@ const findOne = async (ctx) => {
   }
 
   ctx.ok({ user, followed: true });
+};
+
+const postLikesUsers = async (ctx) => {
+  const { limit, offset } = ctx.state.paginate;
+
+  const { rows: users, count: total } = await Like.scope({
+    method: ['likesUsers', ctx.request.params.postId],
+  }).findAndCountAll({ limit, offset });
+
+  ctx.body = {
+    users,
+    _meta: {
+      total,
+      currentPage: Math.ceil((offset + 1) / limit) || 1,
+      pageCount: Math.ceil(total / limit),
+    },
+  };
 };
 
 const create = async (ctx) => {
@@ -140,6 +156,7 @@ const remove = async (ctx) => {
 module.exports = {
   findAll,
   findOne,
+  postLikesUsers,
   create,
   login,
   uploadAvatar,

@@ -39,7 +39,21 @@ class Like extends Model {
     });
   }
 
-  static addScopes(models) {}
+  static addScopes(models) {
+    Like.addScope('likesUsers', (postId) => {
+      return {
+        attributes: ['userId'],
+        include: [
+          {
+            attributes: ['firstname', 'lastname', 'avatar'],
+            model: models.User,
+            as: 'user',
+          },
+        ],
+        where: { postId },
+      };
+    });
+  }
 }
 
 module.exports = Like;
