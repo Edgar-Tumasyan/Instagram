@@ -5,9 +5,6 @@ const Routes = require('./routes');
 
 const port = config.PORT || 3000;
 
-const fileType = require('file-type');
-app.use(require('koa-bodyparser')());
-
 app.use(require('./middleware/requestNormalizer')());
 app.use(require('./middleware/restify')());
 

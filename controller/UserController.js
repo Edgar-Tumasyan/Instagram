@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const Cloudinary = require('../components/Cloudinary');
+const _ = require('lodash');
 
 const { User, Follow } = require('../data/models');
 const config = require('../config');
@@ -97,19 +98,23 @@ const login = async (ctx) => {
 };
 
 const uploadAvatar = async (ctx) => {
-  const reqAvatar = ctx.request.files?.attachments;
+  const reqAvatar = ctx.request.files?.avatar;
 
-  if (!reqAvatar || !reqAvatar[0].mimetype.startsWith('image')) {
+  if (!reqAvatar) {
     return ctx.badRequest({
-      message: 'Please choose your avatar, that should be an image',
+      message: 'Please choose your avatar',
     });
   }
 
-  if (reqAvatar.length > 1) {
+  if (_.isArray(reqAvatar)) {
     return ctx.badRequest({ message: 'Please choose one photo' });
   }
 
-  const avatar = await Cloudinary.upload(reqAvatar[0].path, 'avatars');
+  if (reqAvatar.type !== 'image') {
+    return ctx.badRequest({ message: 'Avatar must be an image' });
+  }
+
+  const avatar = await Cloudinary.upload(reqAvatar.path, 'avatars');
 
   const id = ctx.state.user.id;
 

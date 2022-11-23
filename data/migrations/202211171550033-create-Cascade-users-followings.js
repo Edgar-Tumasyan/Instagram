@@ -3,18 +3,18 @@ module.exports = {
     const transaction = await queryInterface.sequelize.transaction();
     try {
       await queryInterface.removeConstraint(
-        'attachments',
-        'attachments_postId_fkey',
+        'follows',
+        'follows_followingId_fkey',
         {
           transaction,
         }
       );
-      await queryInterface.addConstraint('attachments', {
+      await queryInterface.addConstraint('follows', {
         type: 'foreign key',
-        name: 'attachments_postId_fkey',
-        fields: ['postId'],
+        name: 'follows_followingId_fkey',
+        fields: ['followingId'],
         references: {
-          table: 'posts',
+          table: 'users',
           field: 'id',
         },
         onDelete: 'CASCADE',
@@ -31,18 +31,18 @@ module.exports = {
     const transaction = await queryInterface.sequelize.transaction();
     try {
       await queryInterface.removeConstraint(
-        'attachments',
-        'attachments_postId_fkey',
+        'follows',
+        'follows_followingId_fkey',
         {
           transaction,
         }
       );
-      await queryInterface.addConstraint('attachments', {
+      await queryInterface.addConstraint('follows', {
         type: 'foreign key',
-        name: 'attachments_postId_fkey',
-        fields: ['postId'],
+        name: 'follows_followingId_fkey',
+        fields: ['followingId'],
         references: {
-          table: 'posts',
+          table: 'users',
           field: 'id',
         },
         transaction,

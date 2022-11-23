@@ -1,15 +1,23 @@
 const Router = require('koa-router');
 
 const UserFollowController = require('../controller/UserFollowController');
-const { auth } = require('../middleware');
+const auth = require('../middleware/auth');
 
 const router = new Router({
   prefix: '/users',
 });
 
-router.get('/:profileId/followers', auth, UserFollowController.getUserFollowers);
+router.get(
+  '/:profileId/followers',
+  auth,
+  UserFollowController.getUserFollowers
+);
 
-router.get('/:profileId/followings', auth, UserFollowController.getUserFollowings);
+router.get(
+  '/:profileId/followings',
+  auth,
+  UserFollowController.getUserFollowings
+);
 
 router.post('/:profileId/follow', auth, UserFollowController.create);
 

@@ -1,12 +1,12 @@
-const { v4: uuidv4 } = require('uuid');
+const { v4: uuidV4 } = require('uuid');
 const { faker } = require('@faker-js/faker');
 
 module.exports = {
-  up: async function (queryInterface, Sequelize) {
+  up: async function (queryInterface) {
     const users = [];
 
     for (let i = 0; i < 10; i++) {
-      const id = uuidv4();
+      const id = uuidV4();
       const firstname = faker.name.firstName();
       const lastname = faker.name.lastName();
       const email = faker.internet.email();
@@ -33,7 +33,7 @@ module.exports = {
     await queryInterface.bulkInsert('users', users, {});
   },
 
-  async down(queryInterface, Sequelize) {
+  async down(queryInterface) {
     await queryInterface.bulkDelete('users', null, {});
   },
 };

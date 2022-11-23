@@ -12,7 +12,7 @@ module.exports = {
       await queryInterface.addConstraint('follows', {
         type: 'foreign key',
         name: 'follows_followerId_fkey',
-        fields: ['followingId'],
+        fields: ['followerId'],
         references: {
           table: 'users',
           field: 'id',
@@ -40,7 +40,7 @@ module.exports = {
       await queryInterface.addConstraint('follows', {
         type: 'foreign key',
         name: 'follows_followerId_fkey',
-        fields: ['followingId'],
+        fields: ['followerId'],
         references: {
           table: 'users',
           field: 'id',

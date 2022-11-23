@@ -145,8 +145,9 @@ class User extends Model {
 
   toJSON() {
     const data = this.get();
+    const hiddeFields= ['password', 'role', 'createdAt', 'updatedAt']
 
-    return _.omit(data, 'password', 'role', 'createdAt', 'updatedAt');
+    return _.omit(data, hiddeFields);
   }
 }
 

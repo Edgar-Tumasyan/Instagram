@@ -1,7 +1,8 @@
 const respond = require('koa-respond');
 const compose = require('koa-compose');
 
-const { errorHandler, checkLimitAndOffset } = require('./index');
+const errorHandler = require('./errorHandler');
+const pagination = require('./pagination');
 
 module.exports = () =>
   compose([
@@ -11,5 +12,5 @@ module.exports = () =>
       },
     }),
     errorHandler(),
-    checkLimitAndOffset(),
+    pagination(),
   ]);
