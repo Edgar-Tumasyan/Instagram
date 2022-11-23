@@ -1,6 +1,6 @@
+const { Post, Attachment, sequelize } = require('../data/models');
 const Cloudinary = require('../components/Cloudinary');
 const _ = require('lodash');
-const { Post, Attachment, sequelize } = require('../data/models');
 
 const findAll = async (ctx) => {
   const { limit, offset } = ctx.state.paginate;
@@ -24,13 +24,13 @@ const findAll = async (ctx) => {
 };
 
 const findOne = async (ctx) => {
-  const id = ctx.request.params.id;
+  const postId = ctx.request.params.id;
 
-  const post = await Post.scope({ method: ['expand'] }).findByPk(id);
+  const post = await Post.scope({ method: ['expand'] }).findByPk(postId);
 
   if (!post) {
     return ctx.notFound({
-      message: `No post with id ${ctx.request.params.id}`,
+      message: `No post with id ${postId}`,
     });
   }
 
@@ -60,11 +60,11 @@ const getUserPosts = async (ctx) => {
 };
 
 const create = async (ctx) => {
-  const { description, title } = ctx.request.body;
-
-  if (!description || !title) {
+  if (!ctx.request.body) {
     return ctx.badRequest({ message: 'Please provide description and title' });
   }
+
+  const { description, title } = ctx.request.body;
 
   const reqAttachments = ctx.request.files?.attachments;
 
@@ -140,15 +140,16 @@ const create = async (ctx) => {
 
 const update = async (ctx) => {
   const postId = ctx.request.params.id;
-  const userId = ctx.state.user.id;
 
   const post = await Post.scope({ method: ['expand'] }).findByPk(postId);
 
   if (!post) {
     return ctx.notFound({
-      message: `No post with id ${ctx.request.params.id}`,
+      message: `No post with id ${postId}`,
     });
   }
+
+  const userId = ctx.state.user.id;
 
   if (post.user.id !== userId) {
     return ctx.unauthorized({ message: `You can update only your posts` });
@@ -229,30 +230,29 @@ const update = async (ctx) => {
     }
   });
 
-  const data = await Post.scope({ method: ['expand'] }).findByPk(post.id);
+  const data = await Post.scope({ method: ['expand'] }).findByPk(postId);
 
   return ctx.created({ post: data });
 };
 
 const remove = async (ctx) => {
   const postId = ctx.request.params.id;
-  const userId = ctx.state.user.id;
 
   const post = await Post.findByPk(postId);
 
   if (!post) {
     return ctx.notFound({
-      message: `No post with id ${ctx.request.params.id}`,
+      message: `No post with id ${postId}`,
     });
   }
+
+  const userId = ctx.state.user.id;
 
   if (post.userId !== userId) {
     ctx.unauthorized({ message: `You can delete only your posts` });
   }
 
   const attachments = await Attachment.findAll({ where: { postId } });
-
-
 
   if (attachments) {
     for (const attachment of attachments) {

@@ -4,7 +4,7 @@ module.exports = {
   PORT: process.env.PORT,
 
   JWT_SECRET: process.env.JWT_SECRET,
-  TOKEN_EXPIRESIN: '10d',
+  EXPIRES_IN: '10d',
 
   db: {
     host: process.env.SQL_HOST,

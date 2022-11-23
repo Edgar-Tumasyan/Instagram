@@ -1,6 +1,6 @@
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
 const Cloudinary = require('../components/Cloudinary');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 const _ = require('lodash');
 
 const { User, Follow } = require('../data/models');
@@ -18,7 +18,7 @@ const findAll = async (ctx) => {
     limit,
   });
 
-  ctx.ok({
+  return ctx.ok({
     users,
     _meta: {
       total,
@@ -29,18 +29,20 @@ const findAll = async (ctx) => {
 };
 
 const findOne = async (ctx) => {
-  const id = ctx.request.params.id;
+  const profileId = ctx.request.params.id;
 
-  const user = await User.scope({ method: ['profile'] }).findByPk(id);
+  const user = await User.scope({ method: ['profile'] }).findByPk(profileId);
 
   if (!user) {
     return ctx.notFound({
-      message: `No user with id ${ctx.request.params.id}`,
+      message: `No user with id ${profileId}`,
     });
   }
 
+  const userId = ctx.state.user.id;
+
   const followed = await Follow.findOne({
-    where: { followerId: ctx.state.user.id, followingId: id },
+    where: { followerId: userId, followingId: profileId },
   });
 
   if (!followed) {
@@ -72,7 +74,7 @@ const create = async (ctx) => {
     password: hashPassword,
   });
 
-  ctx.created({ user: newUser });
+  return ctx.created({ user: newUser });
 };
 
 const login = async (ctx) => {
@@ -91,7 +93,7 @@ const login = async (ctx) => {
   const token = jwt.sign(
     { id: user.id, email: user.email, role: user.role },
     config.JWT_SECRET,
-    { expiresIn: config.TOKEN_EXPIRESIN }
+    { expiresIn: config.EXPIRES_IN }
   );
 
   ctx.ok({ user, token });
@@ -129,7 +131,7 @@ const uploadAvatar = async (ctx) => {
 
   const user = await User.scope({ method: ['profile'] }).findByPk(id);
 
-  ctx.created({ user });
+  return ctx.created({ user });
 };
 
 const remove = async (ctx) => {

@@ -43,14 +43,15 @@ const getUserFollowings = async (ctx) => {
 
 const create = async (ctx) => {
   const { profileId } = ctx.params;
+  const userId = ctx.state.user.id;
 
-  if (profileId === ctx.state.user.id) {
+  if (profileId === userId) {
     return ctx.badRequest({ message: `You can't follow your account` });
   }
 
   const isFollowed = await Follow.findOne({
     where: {
-      followerId: ctx.state.user.id,
+      followerId: userId,
       followingId: profileId,
     },
   });
@@ -62,7 +63,7 @@ const create = async (ctx) => {
   }
 
   await Follow.create({
-    followerId: ctx.state.user.id,
+    followerId: userId,
     followingId: profileId,
   });
 
@@ -71,8 +72,9 @@ const create = async (ctx) => {
 
 const remove = async (ctx) => {
   const { profileId } = ctx.params;
+  const userId = ctx.state.user.id;
 
-  if (profileId === ctx.state.user.id) {
+  if (profileId === userId) {
     return ctx.badRequest({
       message: `You can't follow and unfollow your account`,
     });
@@ -80,7 +82,7 @@ const remove = async (ctx) => {
 
   const isFollowed = await Follow.findOne({
     where: {
-      followerId: ctx.state.user.id,
+      followerId: userId,
       followingId: profileId,
     },
   });
@@ -92,10 +94,10 @@ const remove = async (ctx) => {
   }
 
   await Follow.destroy({
-    where: { followerId: ctx.state.user.id, followingId: profileId },
+    where: { followerId: userId, followingId: profileId },
   });
 
-  return ctx.ok({ message: `You unfollow user with id: ${profileId}` });
+  return ctx.noContent();
 };
 
 module.exports = { getUserFollowers, getUserFollowings, create, remove };
