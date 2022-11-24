@@ -9,10 +9,12 @@ const config = require('../config');
 //create user update functionality
 
 const findAll = async (ctx) => {
+  const userId = ctx.state.user.id;
+
   const { limit, offset } = ctx.state.paginate;
 
   const { rows: users, count: total } = await User.scope({
-    method: ['profile'],
+    method: ['profiles', userId],
   }).findAndCountAll({
     offset,
     limit,
@@ -30,16 +32,17 @@ const findAll = async (ctx) => {
 
 const findOne = async (ctx) => {
   const profileId = ctx.request.params.id;
+  const userId = ctx.state.user.id;
 
-  const user = await User.scope({ method: ['profile'] }).findByPk(profileId);
+  const user = await User.scope({
+    method: ['profile', profileId, userId],
+  }).findByPk(profileId);
 
   if (!user) {
     return ctx.notFound({
       message: `No user with id ${profileId}`,
     });
   }
-
-  const userId = ctx.state.user.id;
 
   const followed = await Follow.findOne({
     where: { followerId: userId, followingId: profileId },
@@ -134,6 +137,24 @@ const uploadAvatar = async (ctx) => {
   return ctx.created({ user });
 };
 
+const changeProfileCategory = async (ctx) => {
+  const id = ctx.state.user.id;
+
+  const { profileCategory } = ctx.request.body;
+
+  if (!profileCategory) {
+    return ctx.badRequest({
+      message: 'Please choose your profile category that you want to change',
+    });
+  }
+
+  await User.update({ profileCategory }, { where: { id } });
+
+  const user = await User.findByPk(id);
+
+  ctx.body = { user };
+};
+
 const remove = async (ctx) => {
   const id = ctx.state.user.id;
 
@@ -158,5 +179,6 @@ module.exports = {
   create,
   login,
   uploadAvatar,
+  changeProfileCategory,
   remove,
 };

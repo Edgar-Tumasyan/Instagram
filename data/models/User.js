@@ -1,6 +1,6 @@
 const { DataTypes, Model, literal, Op } = require('sequelize');
 const _ = require('lodash');
-const { UserRole } = require('../lcp');
+const { UserRole, ProfileCategory } = require('../lcp');
 
 class User extends Model {
   static init(sequelize) {
@@ -37,6 +37,11 @@ class User extends Model {
           values: _.values(UserRole),
           defaultValue: UserRole.USER,
         },
+        profileCategory: {
+          type: DataTypes.ENUM,
+          values: _.values(ProfileCategory),
+          defaultValue: ProfileCategory.PUBLIC,
+        },
         avatar: DataTypes.STRING,
         avatarPublicId: DataTypes.STRING,
       },
@@ -71,7 +76,7 @@ class User extends Model {
   }
 
   static addScopes(models) {
-    User.addScope('profile', () => {
+    User.addScope('profile', (profileId, userId) => {
       return {
         attributes: [
           'id',
@@ -96,7 +101,45 @@ class User extends Model {
             ),
             'followingsCount',
           ],
+          [
+            literal(
+              `(SELECT CASE status = (SELECT status from follows WHERE
+                      "followerId" = '${userId}' and "followingId" = '${profileId}') 
+                      WHEN status = 'pending' THEN 'pending'
+                      WHEN status = 'approved'  THEN 'approved'
+                      ELSE 'unfollow'
+                      End as status
+                      FROM follows WHERE
+                      "followerId" = '${userId}' and "followingId" = '${profileId}')`
+            ),
+            'followStatus',
+          ],
         ],
+      };
+    });
+
+    User.addScope('profiles', (userId) => {
+      return {
+        attributes: [
+          'id',
+          'firstname',
+          'lastname',
+          'avatar',
+          [
+            literal(
+              `(SELECT CASE status = (SELECT status from follows WHERE
+                      "followerId" = '${userId}' and "followingId" = "User"."id") 
+                      WHEN status = 'pending' THEN 'pending'
+                      WHEN status = 'approved'  THEN 'approved'
+                      ELSE 'unfollow'
+                      End as status
+                      FROM follows WHERE
+                      "followerId" = '${userId}' and "followingId" = "User"."id")`
+            ),
+            'followStatus',
+          ],
+        ],
+        where: { id: { [Op.not]: userId } },
       };
     });
 
@@ -145,7 +188,7 @@ class User extends Model {
 
   toJSON() {
     const data = this.get();
-    const hiddeFields= ['password', 'role', 'createdAt', 'updatedAt']
+    const hiddeFields = ['password', 'role', 'createdAt', 'updatedAt'];
 
     return _.omit(data, hiddeFields);
   }
