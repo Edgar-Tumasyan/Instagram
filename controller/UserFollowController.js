@@ -5,9 +5,10 @@ const getUserFollowers = async (ctx) => {
   const { limit, offset } = ctx.state.paginate;
 
   const followingId = ctx.request.params.profileId;
+  const userId = ctx.state.user.id
 
   const { rows: users, count: total } = await User.scope({
-    method: ['followers', followingId],
+    method: ['followers', followingId, userId],
   }).findAndCountAll({ offset, limit });
 
   return ctx.ok({
@@ -24,9 +25,10 @@ const getUserFollowings = async (ctx) => {
   const { limit, offset } = ctx.state.paginate;
 
   const followerId = ctx.request.params.profileId;
+  const userId = ctx.state.user.id
 
   const { rows: users, count: total } = await User.scope({
-    method: ['followings', followerId],
+    method: ['followings', followerId, userId],
   }).findAndCountAll({
     offset,
     limit,

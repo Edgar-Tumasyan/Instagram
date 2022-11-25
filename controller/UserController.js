@@ -124,7 +124,9 @@ const uploadAvatar = async (ctx) => {
     }
   );
 
-  const user = await User.scope({ method: ['profile'] }).findByPk(id);
+  const user = await User.scope({ method: ['yourProfile'] }).findByPk(id, {
+    raw: true,
+  });
 
   return ctx.created({ user });
 };

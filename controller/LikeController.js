@@ -1,12 +1,13 @@
-const { Post, Like, User } = require('../data/models');
+const { Post, Like, User, Follow } = require('../data/models');
 
 const postLikesUsers = async (ctx) => {
   const { limit, offset } = ctx.state.paginate;
 
   const postId = ctx.request.params.postId;
+  const userId = ctx.state.user.id;
 
   const { rows: users, count: total } = await User.scope({
-    method: ['likesUsers', postId],
+    method: ['likesUsers', postId, userId],
   }).findAndCountAll({ limit, offset });
 
   ctx.body = {
@@ -22,7 +23,7 @@ const postLikesUsers = async (ctx) => {
 const create = async (ctx) => {
   const { postId } = ctx.params;
 
-  const post = await Post.findByPk(postId);
+  const post = await Post.scope({ method: ['singlePost'] }).findByPk(postId);
 
   if (!post) {
     return ctx.badRequest({ message: `No post with id: ${postId}` });
@@ -38,9 +39,25 @@ const create = async (ctx) => {
     return ctx.badRequest({ message: `You already like this post` });
   }
 
+  if (post.user.profileCategory === 'private' && userId !== post.user.id) {
+    const allowedLike = await Follow.findOne({
+      where: {
+        followerId: userId,
+        followingId: post.user.id,
+        status: 'approved',
+      },
+    });
+
+    if (!allowedLike) {
+      return ctx.forbidden({
+        message: `Posts of user with id: ${post.user.id} can like only followers`,
+      });
+    }
+  }
+
   await Like.create({ userId, postId });
 
-  const data = await Post.scope({ method: ['expand'] }).findByPk(postId);
+  const data = await Post.scope({ method: ['singlePost'] }).findByPk(postId);
 
   return ctx.created({ post: data });
 };

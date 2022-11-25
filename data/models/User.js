@@ -139,9 +139,26 @@ class User extends Model {
       };
     });
 
-    User.addScope('followers', (followingId) => {
+    User.addScope('followers', (followingId, userId) => {
       return {
-        attributes: ['id', 'firstname', 'lastname', 'avatar'],
+        attributes: [
+          'id',
+          'firstname',
+          'lastname',
+          'avatar',
+          'profileCategory',
+          [
+            literal(
+              `(Select CASE (Select COALESCE((Select status from follows WHERE "followerId" =
+                        '${userId}' and "followingId" = "User"."id"), null ))
+                        WHEN 'pending' THEN 'pending'
+                        WHEN 'approved' THEN 'approved'
+                        ELSE 'unfollow'
+                        END as status)`
+            ),
+            'followStatus',
+          ],
+        ],
         where: {
           id: {
             [Op.in]: models.Follow.generateNestedQuery({
@@ -153,9 +170,26 @@ class User extends Model {
       };
     });
 
-    User.addScope('followings', (followerId) => {
+    User.addScope('followings', (followerId, userId) => {
       return {
-        attributes: ['id', 'firstname', 'lastname', 'avatar'],
+        attributes: [
+          'id',
+          'firstname',
+          'lastname',
+          'avatar',
+          'profileCategory',
+          [
+            literal(
+              `(Select CASE (Select COALESCE((Select status from follows WHERE "followerId" =
+                        '${userId}' and "followingId" = "User"."id"), null ))
+                        WHEN 'pending' THEN 'pending'
+                        WHEN 'approved' THEN 'approved'
+                        ELSE 'unfollow'
+                        END as status)`
+            ),
+            'followStatus',
+          ],
+        ],
         where: {
           id: {
             [Op.in]: models.Follow.generateNestedQuery({
@@ -167,9 +201,26 @@ class User extends Model {
       };
     });
 
-    User.addScope('likesUsers', (postId) => {
+    User.addScope('likesUsers', (postId, userId) => {
       return {
-        attributes: ['id', 'firstname', 'lastname', 'avatar'],
+        attributes: [
+          'id',
+          'firstname',
+          'lastname',
+          'avatar',
+          'profileCategory',
+          [
+            literal(
+              `(Select CASE (Select COALESCE((Select status from follows WHERE "followerId" =
+                        '${userId}' and "followingId" = "User"."id"), null ))
+                        WHEN 'pending' THEN 'pending'
+                        WHEN 'approved' THEN 'approved'
+                        ELSE 'unfollow'
+                        END as status)`
+            ),
+            'followStatus',
+          ],
+        ],
         where: {
           id: {
             [Op.in]: models.Like.generateNestedQuery({
@@ -180,13 +231,42 @@ class User extends Model {
         },
       };
     });
+
+    User.addScope('yourProfile', () => {
+      return {
+        attributes: [
+          'id',
+          'firstname',
+          'lastname',
+          'avatar',
+          [
+            literal(
+              `(SELECT count('*') FROM posts WHERE "userId" = "User"."id")::int`
+            ),
+            'postsCount',
+          ],
+          [
+            literal(
+              `(SELECT count('*') FROM follows WHERE "followingId" = "User"."id")::int`
+            ),
+            'followersCount',
+          ],
+          [
+            literal(
+              `(SELECT count('*') FROM follows WHERE "followerId" = "User"."id")::int`
+            ),
+            'followingsCount',
+          ],
+        ],
+      };
+    });
   }
 
   toJSON() {
     const data = this.get();
-    const hiddeFields = ['password', 'role', 'createdAt', 'updatedAt'];
+    //const hiddeFields = ['password', 'role', 'createdAt', 'updatedAt'];
 
-    return _.omit(data, hiddeFields);
+    return _.omit(data, 'password', 'role', 'createdAt', 'updatedAt');
   }
 }
 
