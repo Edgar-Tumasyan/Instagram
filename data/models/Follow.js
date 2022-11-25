@@ -42,7 +42,7 @@ class Follow extends Model {
     });
   }
 
-  static addScopes(models) {
+  static addScopes() {
     Follow.addScope('followedUsers', (followerId) => {
       return {
         attributes: [

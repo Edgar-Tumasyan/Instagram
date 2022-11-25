@@ -49,7 +49,7 @@ class Post extends Model {
   }
 
   static addScopes(models) {
-    Post.addScope('as', (id) => {
+    Post.addScope('as', () => {
       return {
         attributes: [
           'id',
