@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const _ = require('lodash');
 
-const { User, Follow } = require('../data/models');
+const { User } = require('../data/models');
 const config = require('../config');
 
 //create user update functionality

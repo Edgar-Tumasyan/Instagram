@@ -1,6 +1,6 @@
 const { DataTypes, Model } = require('sequelize');
 const _ = require('lodash');
-//const { FollowStatus } = require('../lcp');
+const { FollowStatus } = require('../lcp');
 
 class Follow extends Model {
   static init(sequelize) {
@@ -22,8 +22,8 @@ class Follow extends Model {
         },
         status: {
           type: DataTypes.ENUM,
-          values: ['pending', 'approved', 'unfollow'],
-          defaultValue: 'approved'
+          values: _.values(FollowStatus),
+          defaultValue: FollowStatus.APPROVED,
         },
       },
       {

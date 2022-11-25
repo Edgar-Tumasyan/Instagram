@@ -1,4 +1,6 @@
 const { DataTypes } = require('sequelize');
+const _ = require('lodash')
+const { FollowStatus } = require('../lcp');
 
 module.exports = {
   async up(queryInterface, Sequelize) {
@@ -27,8 +29,8 @@ module.exports = {
       },
       status: {
         type: Sequelize.DataTypes.ENUM,
-        values: ['pending', 'approved', 'unfollow'],
-        defaultValue: 'approved',
+        values: _.values(FollowStatus),
+        defaultValue: FollowStatus.APPROVED,
       },
       createdAt: {
         allowNull: false,

@@ -49,6 +49,44 @@ class Post extends Model {
   }
 
   static addScopes(models) {
+    Post.addScope('allPosts', () => {
+      return {
+        attributes: [
+          'id',
+          'title',
+          'description',
+          [
+            literal(
+              `(SELECT count('*') FROM likes WHERE "postId" = "Post"."id")::int`
+            ),
+            'likesCount',
+          ],
+          [
+            literal(
+              `(SELECT count('*') FROM attachments WHERE "postId" = "Post"."id")::int`
+            ),
+            'attachmentsCount',
+          ],
+        ],
+        include: [
+          {
+            attributes: ['id', 'firstname', 'lastname'],
+            model: models.User,
+            as: 'user',
+            where: {
+              profileCategory: 'public',
+            },
+          },
+          {
+            attributes: ['id', 'attachmentUrl', 'attachmentPublicId'],
+            model: models.Attachment,
+            as: 'attachments',
+            separate: true,
+          },
+        ],
+      };
+    });
+
     Post.addScope('expand', () => {
       return {
         attributes: [
@@ -73,7 +111,76 @@ class Post extends Model {
             attributes: ['id', 'firstname', 'lastname'],
             model: models.User,
             as: 'user',
-            where: { profileCategory: 'public' },
+          },
+          {
+            attributes: ['id', 'attachmentUrl', 'attachmentPublicId'],
+            model: models.Attachment,
+            as: 'attachments',
+            separate: true,
+          },
+        ],
+      };
+    });
+
+    Post.addScope('newPost', () => {
+      return {
+        attributes: [
+          'id',
+          'title',
+          'description',
+          [
+            literal(
+              `(SELECT count('*') FROM likes WHERE "postId" = "Post"."id")::int`
+            ),
+            'likesCount',
+          ],
+          [
+            literal(
+              `(SELECT count('*') FROM attachments WHERE "postId" = "Post"."id")::int`
+            ),
+            'attachmentsCount',
+          ],
+        ],
+        include: [
+          {
+            attributes: ['id', 'firstname', 'lastname'],
+            model: models.User,
+            as: 'user',
+          },
+          {
+            attributes: ['id', 'attachmentUrl', 'attachmentPublicId'],
+            model: models.Attachment,
+            as: 'attachments',
+            separate: true,
+          },
+        ],
+      };
+    });
+
+    Post.addScope('singlePost', () => {
+      return {
+        attributes: [
+          'id',
+          'title',
+          'description',
+          [
+            literal(
+              `(SELECT count('*') FROM likes WHERE "postId" = "Post"."id")::int`
+            ),
+            'likesCount',
+          ],
+          [
+            literal(
+              `(SELECT count('*') FROM attachments WHERE "postId" = "Post"."id")::int`
+            ),
+            'attachmentsCount',
+          ],
+        ],
+        include: [
+          {
+            attributes: ['id', 'firstname', 'lastname', 'profileCategory'],
+            model: models.User,
+            as: 'user',
           },
           {
             attributes: ['id', 'attachmentUrl', 'attachmentPublicId'],

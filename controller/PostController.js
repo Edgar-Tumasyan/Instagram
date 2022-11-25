@@ -6,7 +6,7 @@ const findAll = async (ctx) => {
   const { limit, offset } = ctx.state.paginate;
 
   const { rows: posts, count: total } = await Post.scope({
-    method: ['expand'],
+    method: ['allPosts'],
   }).findAndCountAll({
     offset,
     limit,
@@ -26,15 +26,22 @@ const findAll = async (ctx) => {
 const findOne = async (ctx) => {
   const postId = ctx.request.params.id;
 
-  const post = await Post.scope({ method: ['expand'] }).findByPk(postId);
+  const post = await Post.scope({ method: ['singlePost'] }).findByPk(postId);
 
-  const user = await User.findByPk(post.user.id, { raw: true });
+  if (!post) {
+    return ctx.notFound({
+      message: `No post with id ${postId}`,
+    });
+  }
 
-  if (user.profileCategory === 'private') {
+  const userId = ctx.state.user.id;
+
+  if (post.user.profileCategory === 'private') {
     const allowedPost = await Follow.findOne({
       where: {
-        followerId: user.id,
+        followerId: userId,
         followingId: post.user.id,
+        status: 'approved',
       },
     });
 
@@ -43,12 +50,6 @@ const findOne = async (ctx) => {
         message: `Posts of user with id: ${post.user.id} can see only followers`,
       });
     }
-  }
-
-  if (!post) {
-    return ctx.notFound({
-      message: `No post with id ${postId}`,
-    });
   }
 
   return ctx.ok({ post });
@@ -65,6 +66,7 @@ const getUserPosts = async (ctx) => {
       where: {
         followerId: userId,
         followingId: profileId,
+        status: 'approved',
       },
     });
 
