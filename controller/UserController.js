@@ -44,15 +44,7 @@ const findOne = async (ctx) => {
     });
   }
 
-  const followed = await Follow.findOne({
-    where: { followerId: userId, followingId: profileId },
-  });
-
-  if (!followed) {
-    return ctx.ok({ user, followed: false });
-  }
-
-  return ctx.ok({ user, followed: true });
+  return ctx.ok({ user });
 };
 
 const create = async (ctx) => {

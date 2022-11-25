@@ -1,4 +1,4 @@
-const { Post, Attachment, sequelize } = require('../data/models');
+const { Post, Attachment, User, Follow, sequelize } = require('../data/models');
 const Cloudinary = require('../components/Cloudinary');
 const _ = require('lodash');
 
@@ -28,6 +28,23 @@ const findOne = async (ctx) => {
 
   const post = await Post.scope({ method: ['expand'] }).findByPk(postId);
 
+  const user = await User.findByPk(post.user.id, { raw: true });
+
+  if (user.profileCategory === 'private') {
+    const allowedPost = await Follow.findOne({
+      where: {
+        followerId: user.id,
+        followingId: post.user.id,
+      },
+    });
+
+    if (!allowedPost) {
+      return ctx.forbidden({
+        message: `Posts of user with id: ${post.user.id} can see only followers`,
+      });
+    }
+  }
+
   if (!post) {
     return ctx.notFound({
       message: `No post with id ${postId}`,
@@ -38,12 +55,30 @@ const findOne = async (ctx) => {
 };
 
 const getUserPosts = async (ctx) => {
+  const profileId = ctx.request.params.profileId;
+  const userId = ctx.state.user.id;
+
+  const user = await User.findByPk(profileId, { raw: true });
+
+  if (user.profileCategory === 'private') {
+    const allowedPosts = await Follow.findOne({
+      where: {
+        followerId: userId,
+        followingId: profileId,
+      },
+    });
+
+    if (!allowedPosts) {
+      return ctx.forbidden({
+        message: `Posts of user with id: ${profileId} can see only followers`,
+      });
+    }
+  }
+
   const { limit, offset } = ctx.state.paginate;
 
-  const userId = ctx.request.params.profileId;
-
   const { rows: posts, count: total } = await Post.scope({
-    method: ['userAllPosts', userId],
+    method: ['userAllPosts', profileId],
   }).findAndCountAll({
     limit,
     offset,

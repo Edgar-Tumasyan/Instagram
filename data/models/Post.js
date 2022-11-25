@@ -73,6 +73,7 @@ class Post extends Model {
             attributes: ['id', 'firstname', 'lastname'],
             model: models.User,
             as: 'user',
+            where: { profileCategory: 'public' },
           },
           {
             attributes: ['id', 'attachmentUrl', 'attachmentPublicId'],
@@ -84,7 +85,7 @@ class Post extends Model {
       };
     });
 
-    Post.addScope('userAllPosts', (userId) => {
+    Post.addScope('userAllPosts', (profileId) => {
       return {
         attributes: [
           'id',
@@ -116,7 +117,7 @@ class Post extends Model {
             separate: true,
           },
         ],
-        where: { userId },
+        where: { userId: profileId },
       };
     });
   }

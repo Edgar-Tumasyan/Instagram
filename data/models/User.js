@@ -103,14 +103,12 @@ class User extends Model {
           ],
           [
             literal(
-              `(SELECT CASE status = (SELECT status from follows WHERE
-                      "followerId" = '${userId}' and "followingId" = '${profileId}') 
-                      WHEN status = 'pending' THEN 'pending'
-                      WHEN status = 'approved'  THEN 'approved'
-                      ELSE 'unfollow'
-                      End as status
-                      FROM follows WHERE
-                      "followerId" = '${userId}' and "followingId" = '${profileId}')`
+              `(Select CASE (Select COALESCE((Select status from follows WHERE "followerId" =
+                        '${userId}' and "followingId" = '${profileId}'), null ))
+                        WHEN 'pending' THEN 'pending'
+                        WHEN 'approved' THEN 'approved'
+                        ELSE 'unfollow'
+                        END as status)`
             ),
             'followStatus',
           ],
@@ -127,14 +125,12 @@ class User extends Model {
           'avatar',
           [
             literal(
-              `(SELECT CASE status = (SELECT status from follows WHERE
-                      "followerId" = '${userId}' and "followingId" = "User"."id") 
-                      WHEN status = 'pending' THEN 'pending'
-                      WHEN status = 'approved'  THEN 'approved'
-                      ELSE 'unfollow'
-                      End as status
-                      FROM follows WHERE
-                      "followerId" = '${userId}' and "followingId" = "User"."id")`
+              `(Select CASE (Select COALESCE((Select status from follows WHERE "followerId" =
+                        '${userId}' and "followingId" = "User"."id"), null ))
+                        WHEN 'pending' THEN 'pending'
+                        WHEN 'approved' THEN 'approved'
+                        ELSE 'unfollow'
+                        END as status)`
             ),
             'followStatus',
           ],

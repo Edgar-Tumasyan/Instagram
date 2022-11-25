@@ -25,6 +25,11 @@ module.exports = {
           key: 'id',
         },
       },
+      status: {
+        type: Sequelize.DataTypes.ENUM,
+        values: ['pending', 'approved', 'unfollow'],
+        defaultValue: 'approved',
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE,
