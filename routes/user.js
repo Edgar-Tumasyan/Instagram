@@ -10,6 +10,7 @@ const router = new Router({
 router.get('/', auth, UserController.findAll);
 router.get('/:id', auth, UserController.findOne);
 
+
 router.post('/', UserController.create);
 router.post('/login', UserController.login);
 router.post('/avatar', auth, UserController.uploadAvatar);

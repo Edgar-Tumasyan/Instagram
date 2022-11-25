@@ -5,7 +5,7 @@ const getUserFollowers = async (ctx) => {
   const { limit, offset } = ctx.state.paginate;
 
   const followingId = ctx.request.params.profileId;
-  const userId = ctx.state.user.id
+  const userId = ctx.state.user.id;
 
   const { rows: users, count: total } = await User.scope({
     method: ['followers', followingId, userId],
@@ -25,7 +25,7 @@ const getUserFollowings = async (ctx) => {
   const { limit, offset } = ctx.state.paginate;
 
   const followerId = ctx.request.params.profileId;
-  const userId = ctx.state.user.id
+  const userId = ctx.state.user.id;
 
   const { rows: users, count: total } = await User.scope({
     method: ['followings', followerId, userId],

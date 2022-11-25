@@ -2,6 +2,34 @@ const { Post, Attachment, User, Follow, sequelize } = require('../data/models');
 const Cloudinary = require('../components/Cloudinary');
 const _ = require('lodash');
 
+const main = async (ctx) => {
+  const { limit, offset } = ctx.state.paginate;
+
+  const followerId = ctx.state.user.id;
+
+  const users = await Follow.scope({
+    method: ['followedUsers', followerId],
+  }).findAll({ raw: true });
+
+  const followedUsers = users.map((user) => user.userId);
+
+  const { rows: posts, count: total } = await Post.scope({
+    method: ['mainPosts', followedUsers],
+  }).findAndCountAll({
+    offset,
+    limit,
+  });
+
+  ctx.body = {
+    posts,
+    _meta: {
+      total,
+      currentPage: Math.ceil((offset + 1) / limit) || 1,
+      pageCount: Math.ceil(total / limit),
+    },
+  };
+};
+
 const findAll = async (ctx) => {
   const { limit, offset } = ctx.state.paginate;
 
@@ -304,4 +332,12 @@ const remove = async (ctx) => {
   return ctx.noContent();
 };
 
-module.exports = { findAll, findOne, getUserPosts, create, update, remove };
+module.exports = {
+  main,
+  findAll,
+  findOne,
+  getUserPosts,
+  create,
+  update,
+  remove,
+};

@@ -1,4 +1,4 @@
-const { DataTypes, Model } = require('sequelize');
+const { DataTypes, Model, literal } = require('sequelize');
 const _ = require('lodash');
 const { FollowStatus } = require('../lcp');
 
@@ -39,6 +39,21 @@ class Follow extends Model {
     Follow.belongsTo(models.User, {
       as: 'following',
       foreignKey: 'followingId',
+    });
+  }
+
+  static addScopes(models) {
+    Follow.addScope('followedUsers', (followerId) => {
+      return {
+        attributes: [
+          [
+            literal(`
+        (Select id from users where id = "Follow"."followingId")`),
+            'userId',
+          ],
+        ],
+        where: { followerId },
+      };
     });
   }
 }

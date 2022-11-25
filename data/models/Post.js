@@ -1,4 +1,4 @@
-const { DataTypes, Model, literal } = require('sequelize');
+const { DataTypes, Model, literal, Op } = require('sequelize');
 
 class Post extends Model {
   static init(sequelize) {
@@ -49,6 +49,52 @@ class Post extends Model {
   }
 
   static addScopes(models) {
+    Post.addScope('as', (id) => {
+      return {
+        attributes: [
+          'id',
+          'title',
+          'description',
+          [
+            literal(
+              `(SELECT count('*') FROM likes WHERE "postId" = "Post"."id")::int`
+            ),
+            'likesCount',
+          ],
+          [
+            literal(
+              `(SELECT count('*') FROM attachments WHERE "postId" = "Post"."id")::int`
+            ),
+            'attachmentsCount',
+          ],
+        ],
+        include: [
+          {
+            attributes: ['id', 'firstname', 'lastname'],
+            model: models.User,
+            as: 'user',
+            include: [
+              {
+                attributes: [],
+                model: models.Follow,
+                as: 'followers',
+                where: {
+                  followerId: `"User"."id"`,
+                  followingId: `"Post"."userId"`,
+                },
+              },
+            ],
+          },
+          {
+            attributes: ['id', 'attachmentUrl', 'attachmentPublicId'],
+            model: models.Attachment,
+            as: 'attachments',
+            separate: true,
+          },
+        ],
+      };
+    });
+
     Post.addScope('allPosts', () => {
       return {
         attributes: [
@@ -225,6 +271,42 @@ class Post extends Model {
           },
         ],
         where: { userId: profileId },
+      };
+    });
+
+    Post.addScope('mainPosts', (followedUsers) => {
+      return {
+        attributes: [
+          'id',
+          'title',
+          'description',
+          [
+            literal(
+              `(SELECT count('*') FROM likes WHERE "postId" = "Post"."id")::int`
+            ),
+            'likesCount',
+          ],
+          [
+            literal(
+              `(SELECT count('*') FROM attachments WHERE "postId" = "Post"."id")::int`
+            ),
+            'attachmentsCount',
+          ],
+        ],
+        include: [
+          {
+            attributes: ['id', 'firstname', 'lastname'],
+            model: models.User,
+            as: 'user',
+          },
+          {
+            attributes: ['id', 'attachmentUrl', 'attachmentPublicId'],
+            model: models.Attachment,
+            as: 'attachments',
+            separate: true,
+          },
+        ],
+        where: { userId: { [Op.in]: followedUsers } },
       };
     });
   }
