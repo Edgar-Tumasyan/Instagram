@@ -1,4 +1,4 @@
 module.exports = {
-  PUBLIC: 'public',
-  PRIVATE: 'private',
+    PUBLIC: 'public',
+    PRIVATE: 'private'
 };

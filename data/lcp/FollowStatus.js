@@ -1,4 +1,4 @@
 module.exports = {
-  PENDING: 'pending',
-  APPROVED: 'approved',
+    PENDING: 'pending',
+    APPROVED: 'approved'
 };

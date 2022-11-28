@@ -5,12 +5,12 @@ const errorHandler = require('./errorHandler');
 const pagination = require('./pagination');
 
 module.exports = () =>
-  compose([
-    respond({
-      statusMethods: {
-        unprocessable_entity: 422,
-      },
-    }),
-    errorHandler(),
-    pagination(),
-  ]);
+    compose([
+        respond({
+            statusMethods: {
+                unprocessable_entity: 422
+            }
+        }),
+        errorHandler(),
+        pagination()
+    ]);

@@ -6,173 +6,171 @@ const _ = require('lodash');
 const { User } = require('../data/models');
 const config = require('../config');
 
-//create user update functionality
+// create user update functionality
 
-const findAll = async (ctx) => {
-  const userId = ctx.state.user.id;
+const findAll = async ctx => {
+    const userId = ctx.state.user.id;
 
-  const { limit, offset } = ctx.state.paginate;
+    const { limit, offset } = ctx.state.paginate;
 
-  const { rows: users, count: total } = await User.scope({
-    method: ['profiles', userId],
-  }).findAndCountAll({
-    offset,
-    limit,
-  });
-
-  return ctx.ok({
-    users,
-    _meta: {
-      total,
-      currentPage: Math.ceil((offset + 1) / limit) || 1,
-      pageCount: Math.ceil(total / limit),
-    },
-  });
-};
-
-const findOne = async (ctx) => {
-  const profileId = ctx.request.params.id;
-  const userId = ctx.state.user.id;
-
-  const user = await User.scope({
-    method: ['profile', profileId, userId],
-  }).findByPk(profileId);
-
-  if (!user) {
-    return ctx.notFound({
-      message: `No user with id ${profileId}`,
+    const { rows: users, count: total } = await User.scope({
+        method: ['profiles', userId]
+    }).findAndCountAll({
+        offset,
+        limit
     });
-  }
 
-  return ctx.ok({ user });
-};
-
-const create = async (ctx) => {
-  const { firstname, lastname, email, password } = ctx.request.body;
-
-  if (!firstname || !lastname || !email || !password) {
-    return ctx.badRequest({ message: 'Please provide all values' });
-  }
-
-  const existingEmail = await User.findOne({ where: { email } });
-
-  if (existingEmail) {
-    return ctx.badRequest({ message: `Email ${email} already exist` });
-  }
-
-  const hashPassword = await bcrypt.hash(password, 10);
-
-  const newUser = await User.create({
-    firstname,
-    lastname,
-    email,
-    password: hashPassword,
-  });
-
-  return ctx.created({ user: newUser });
-};
-
-const login = async (ctx) => {
-  const { email, password } = ctx.request.body;
-
-  if (!email || !password) {
-    return ctx.badRequest({ message: 'Please provide all values' });
-  }
-
-  const user = await User.findOne({ where: { email } });
-
-  if (!user || !(await bcrypt.compare(password, user.password))) {
-    return ctx.notFound({ message: 'Invalid Credentials' });
-  }
-
-  const token = jwt.sign(
-    { id: user.id, email: user.email, role: user.role },
-    config.JWT_SECRET,
-    { expiresIn: config.EXPIRES_IN }
-  );
-
-  ctx.ok({ user, token });
-};
-
-const uploadAvatar = async (ctx) => {
-  const reqAvatar = ctx.request.files?.avatar;
-
-  if (!reqAvatar) {
-    return ctx.badRequest({
-      message: 'Please choose your avatar',
+    return ctx.ok({
+        users,
+        _meta: {
+            total,
+            currentPage: Math.ceil((offset + 1) / limit) || 1,
+            pageCount: Math.ceil(total / limit)
+        }
     });
-  }
+};
 
-  if (_.isArray(reqAvatar)) {
-    return ctx.badRequest({ message: 'Please choose one photo' });
-  }
+const findOne = async ctx => {
+    const profileId = ctx.request.params.id;
+    const userId = ctx.state.user.id;
 
-  if (reqAvatar.type !== 'image') {
-    return ctx.badRequest({ message: 'Avatar must be an image' });
-  }
+    const user = await User.scope({
+        method: ['profile', profileId, userId]
+    }).findByPk(profileId);
 
-  const avatar = await Cloudinary.upload(reqAvatar.path, 'avatars');
-
-  const id = ctx.state.user.id;
-
-  await User.update(
-    { avatar: avatar.secure_url, avatarPublicId: avatar.public_id },
-    {
-      where: {
-        id,
-      },
+    if (!user) {
+        return ctx.notFound({
+            message: `No user with id ${profileId}`
+        });
     }
-  );
 
-  const user = await User.scope({ method: ['yourProfile'] }).findByPk(id, {
-    raw: true,
-  });
-
-  return ctx.created({ user });
+    return ctx.ok({ user });
 };
 
-const changeProfileCategory = async (ctx) => {
-  const id = ctx.state.user.id;
+const create = async ctx => {
+    const { firstname, lastname, email, password } = ctx.request.body;
 
-  const { profileCategory } = ctx.request.body;
+    if (!firstname || !lastname || !email || !password) {
+        return ctx.badRequest({ message: 'Please provide all values' });
+    }
 
-  if (!profileCategory) {
-    return ctx.badRequest({
-      message: 'Please choose your profile category that you want to change',
+    const existingEmail = await User.findOne({ where: { email } });
+
+    if (existingEmail) {
+        return ctx.badRequest({ message: `Email ${email} already exist` });
+    }
+
+    const hashPassword = await bcrypt.hash(password, 10);
+
+    const newUser = await User.create({
+        firstname,
+        lastname,
+        email,
+        password: hashPassword
     });
-  }
 
-  await User.update({ profileCategory }, { where: { id } });
-
-  const user = await User.findByPk(id);
-
-  ctx.body = { user };
+    return ctx.created({ user: newUser });
 };
 
-const remove = async (ctx) => {
-  const id = ctx.state.user.id;
+const login = async ctx => {
+    const { email, password } = ctx.request.body;
 
-  const user = await User.findByPk(id);
+    if (!email || !password) {
+        return ctx.badRequest({ message: 'Please provide all values' });
+    }
 
-  if (!user) {
-    return ctx.notFound({ message: `No user with id: ${id}` });
-  }
+    const user = await User.findOne({ where: { email } });
 
-  if (user.avatar) {
-    await Cloudinary.delete(user.avatarPublicId);
-  }
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+        return ctx.notFound({ message: 'Invalid Credentials' });
+    }
 
-  await User.destroy({ where: { id } });
+    const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, config.JWT_SECRET, {
+        expiresIn: config.EXPIRES_IN
+    });
 
-  ctx.noContent();
+    ctx.ok({ user, token });
+};
+
+const uploadAvatar = async ctx => {
+    const reqAvatar = ctx.request.files?.avatar;
+
+    if (!reqAvatar) {
+        return ctx.badRequest({
+            message: 'Please choose your avatar'
+        });
+    }
+
+    if (_.isArray(reqAvatar)) {
+        return ctx.badRequest({ message: 'Please choose one photo' });
+    }
+
+    if (reqAvatar.type !== 'image') {
+        return ctx.badRequest({ message: 'Avatar must be an image' });
+    }
+
+    const avatar = await Cloudinary.upload(reqAvatar.path, 'avatars');
+
+    const id = ctx.state.user.id;
+
+    await User.update(
+        { avatar: avatar.secure_url, avatarPublicId: avatar.public_id },
+        {
+            where: {
+                id
+            }
+        }
+    );
+
+    const user = await User.scope({ method: ['yourProfile'] }).findByPk(id, {
+        raw: true
+    });
+
+    return ctx.created({ user });
+};
+
+const changeProfileCategory = async ctx => {
+    const id = ctx.state.user.id;
+
+    const { profileCategory } = ctx.request.body;
+
+    if (!profileCategory) {
+        return ctx.badRequest({
+            message: 'Please choose your profile category that you want to change'
+        });
+    }
+
+    await User.update({ profileCategory }, { where: { id } });
+
+    const user = await User.findByPk(id);
+
+    ctx.body = { user };
+};
+
+const remove = async ctx => {
+    const id = ctx.state.user.id;
+
+    const user = await User.findByPk(id);
+
+    if (!user) {
+        return ctx.notFound({ message: `No user with id: ${id}` });
+    }
+
+    if (user.avatar) {
+        await Cloudinary.delete(user.avatarPublicId);
+    }
+
+    await User.destroy({ where: { id } });
+
+    ctx.noContent();
 };
 
 module.exports = {
-  findAll,
-  findOne,
-  create,
-  login,
-  uploadAvatar,
-  changeProfileCategory,
-  remove,
+    findAll,
+    findOne,
+    create,
+    login,
+    uploadAvatar,
+    changeProfileCategory,
+    remove
 };

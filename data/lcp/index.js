@@ -1,5 +1,5 @@
 module.exports = {
-  UserRole: require('./UserRole'),
-  ProfileCategory: require('./ProfileCategory'),
-  FollowStatus: require('./FollowStatus'),
+    UserRole: require('./UserRole'),
+    ProfileCategory: require('./ProfileCategory'),
+    FollowStatus: require('./FollowStatus')
 };

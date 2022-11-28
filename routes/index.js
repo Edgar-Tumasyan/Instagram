@@ -5,9 +5,7 @@ const userRoutes = require('./user');
 const postRoutes = require('./post');
 const likeRoutes = require('./like');
 
-const router = new Router({
-  prefix: '/api/v1',
-});
+const router = new Router({ prefix: '/api/v1' });
 
 router.use(userFollowRoutes.routes());
 router.use(userRoutes.routes());

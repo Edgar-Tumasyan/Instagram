@@ -12,5 +12,5 @@ app.use(Routes.routes());
 app.use(Routes.allowedMethods());
 
 app.listen(port, () => {
-  console.log(`Server running on port: ${port}`);
+    console.log(`Server running on port: ${port}`);
 });
