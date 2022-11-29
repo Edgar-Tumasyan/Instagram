@@ -1,3 +1,4 @@
+const ErrorMessages = require('../constants/ErrorMessages');
 const { Follow, User } = require('../data/models');
 const { FollowStatus } = require('../data/lcp');
 
@@ -49,7 +50,7 @@ const create = async ctx => {
     const userId = ctx.state.user.id;
 
     if (profileId === userId) {
-        return ctx.badRequest({ message: `You can't follow your account` });
+        return ctx.badRequest(ErrorMessages.FOLLOW_ACCESS);
     }
 
     const isFollowed = await Follow.findOne({
@@ -61,15 +62,11 @@ const create = async ctx => {
     });
 
     if (isFollowed && isFollowed.status === 'approved') {
-        return ctx.badRequest({
-            message: `You already follow user with id ${profileId}`
-        });
+        return ctx.badRequest(ErrorMessages.FOLLOW_APPROVED + ` ${profileId}`);
     }
 
     if (isFollowed && isFollowed.status === 'pending') {
-        return ctx.badRequest({
-            message: `You have already sent request to follow user with id: ${profileId}`
-        });
+        return ctx.badRequest(ErrorMessages.FOLLOW_PENDING + ` ${profileId}`);
     }
 
     const user = await User.findByPk(profileId, { raw: true });
@@ -105,9 +102,7 @@ const acceptFollowInvitation = async ctx => {
     });
 
     if (!isFollowed) {
-        return ctx.badRequest({
-            message: `User with id: ${followerId} cancel follow request`
-        });
+        return ctx.badRequest(ErrorMessages.FOLLOW_REQUEST_CANCEL);
     }
 
     await Follow.update(
@@ -132,9 +127,7 @@ const declineFollowInvitation = async ctx => {
     });
 
     if (!isFollowed) {
-        return ctx.badRequest({
-            message: `User with id: ${followerId} cancel follow request`
-        });
+        return ctx.badRequest(ErrorMessages.FOLLOW_REQUEST_CANCEL);
     }
 
     await Follow.destroy({ where: { followerId, followingId } });
@@ -168,9 +161,7 @@ const remove = async ctx => {
     const userId = ctx.state.user.id;
 
     if (profileId === userId) {
-        return ctx.badRequest({
-            message: `You can't follow and unfollow your account`
-        });
+        return ctx.badRequest(ErrorMessages.FOLLOW_PERMISSION);
     }
 
     const isFollowed = await Follow.findOne({
@@ -181,9 +172,7 @@ const remove = async ctx => {
     });
 
     if (!isFollowed) {
-        return ctx.notFound({
-            message: `You don't follow user with id ${profileId}`
-        });
+        return ctx.notFound(ErrorMessages.NO_FOLLOW + ` ${profileId}`);
     }
 
     await Follow.destroy({

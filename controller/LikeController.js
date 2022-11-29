@@ -1,4 +1,5 @@
 const { Post, Like, User, Follow } = require('../data/models');
+const ErrorMessages = require('../constants/ErrorMessages');
 
 const postLikesUsers = async ctx => {
     const { limit, offset } = ctx.state.paginate;
@@ -26,7 +27,7 @@ const create = async ctx => {
     const post = await Post.scope({ method: ['singlePost'] }).findByPk(postId);
 
     if (!post) {
-        return ctx.badRequest({ message: `No post with id: ${postId}` });
+        return ctx.badRequest(ErrorMessages.NO_POST + ` ${postId}`);
     }
 
     const userId = ctx.state.user.id;
@@ -36,7 +37,7 @@ const create = async ctx => {
     });
 
     if (existingLike) {
-        return ctx.badRequest({ message: `You already like this post` });
+        return ctx.badRequest(ErrorMessages.EXISTING_LIKE);
     }
 
     if (post.user.profileCategory === 'private' && userId !== post.user.id) {
@@ -49,9 +50,7 @@ const create = async ctx => {
         });
 
         if (!allowedLike) {
-            return ctx.forbidden({
-                message: `Posts of user with id: ${post.user.id} can like only followers`
-            });
+            return ctx.forbidden(ErrorMessages.LIKE_PERMISSION);
         }
     }
 
@@ -68,7 +67,7 @@ const remove = async ctx => {
     const post = await Post.findByPk(postId);
 
     if (!post) {
-        return ctx.badRequest({ message: `No post with id: ${postId}` });
+        return ctx.badRequest(ErrorMessages.NO_POST + ` ${postId}`);
     }
 
     const userId = ctx.state.user.id;
@@ -78,7 +77,7 @@ const remove = async ctx => {
     });
 
     if (!existingLike) {
-        return ctx.badRequest({ message: `You don't like this post` });
+        return ctx.badRequest(ErrorMessages.NO_LIKE);
     }
 
     await Like.destroy({ where: { userId, postId } });

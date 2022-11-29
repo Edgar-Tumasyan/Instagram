@@ -1,3 +1,4 @@
+const ErrorMessages = require('../constants/ErrorMessages');
 const Cloudinary = require('../components/Cloudinary');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
@@ -39,9 +40,7 @@ const findOne = async ctx => {
     }).findByPk(profileId);
 
     if (!user) {
-        return ctx.notFound({
-            message: `No user with id ${profileId}`
-        });
+        return ctx.notFound(ErrorMessages.NO_USER + ` ${profileId}`);
     }
 
     return ctx.ok({ user });
@@ -51,13 +50,13 @@ const create = async ctx => {
     const { firstname, lastname, email, password } = ctx.request.body;
 
     if (!firstname || !lastname || !email || !password) {
-        return ctx.badRequest({ message: 'Please provide all values' });
+        return ctx.badRequest(ErrorMessages.MISSING_VALUES);
     }
 
     const existingEmail = await User.findOne({ where: { email } });
 
     if (existingEmail) {
-        return ctx.badRequest({ message: `Email ${email} already exist` });
+        return ctx.badRequest(ErrorMessages.EXISTING_EMAIL);
     }
 
     const hashPassword = await bcrypt.hash(password, 10);
@@ -76,13 +75,13 @@ const login = async ctx => {
     const { email, password } = ctx.request.body;
 
     if (!email || !password) {
-        return ctx.badRequest({ message: 'Please provide all values' });
+        return ctx.badRequest(ErrorMessages.MISSING_VALUES);
     }
 
     const user = await User.findOne({ where: { email } });
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
-        return ctx.notFound({ message: 'Invalid Credentials' });
+        return ctx.notFound(ErrorMessages.INVALID_CREDENTIALS);
     }
 
     const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, config.JWT_SECRET, {
@@ -96,17 +95,15 @@ const uploadAvatar = async ctx => {
     const reqAvatar = ctx.request.files?.avatar;
 
     if (!reqAvatar) {
-        return ctx.badRequest({
-            message: 'Please choose your avatar'
-        });
+        return ctx.badRequest(ErrorMessages.MISSING_AVATAR);
     }
 
     if (_.isArray(reqAvatar)) {
-        return ctx.badRequest({ message: 'Please choose one photo' });
+        return ctx.badRequest(ErrorMessages.MANY_AVATARS);
     }
 
     if (reqAvatar.type !== 'image') {
-        return ctx.badRequest({ message: 'Avatar must be an image' });
+        return ctx.badRequest(ErrorMessages.AVATAR_TYPE);
     }
 
     const avatar = await Cloudinary.upload(reqAvatar.path, 'avatars');
@@ -135,9 +132,7 @@ const changeProfileCategory = async ctx => {
     const { profileCategory } = ctx.request.body;
 
     if (!profileCategory) {
-        return ctx.badRequest({
-            message: 'Please choose your profile category that you want to change'
-        });
+        return ctx.badRequest(ErrorMessages.PROFILE_CATEGORY);
     }
 
     await User.update({ profileCategory }, { where: { id } });
@@ -153,7 +148,7 @@ const remove = async ctx => {
     const user = await User.findByPk(id);
 
     if (!user) {
-        return ctx.notFound({ message: `No user with id: ${id}` });
+        return ctx.notFound(ErrorMessages.NO_USER + ` ${id}`);
     }
 
     if (user.avatar) {

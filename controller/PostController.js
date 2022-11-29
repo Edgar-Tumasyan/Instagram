@@ -1,4 +1,5 @@
 const { Post, Attachment, User, Follow, sequelize } = require('../data/models');
+const ErrorMessages = require('../constants/ErrorMessages');
 const Cloudinary = require('../components/Cloudinary');
 const _ = require('lodash');
 
@@ -57,9 +58,7 @@ const findOne = async ctx => {
     const post = await Post.scope({ method: ['singlePost'] }).findByPk(postId);
 
     if (!post) {
-        return ctx.notFound({
-            message: `No post with id ${postId}`
-        });
+        return ctx.notFound(ErrorMessages.NO_POST + ` ${postId}`);
     }
 
     const userId = ctx.state.user.id;
@@ -74,9 +73,7 @@ const findOne = async ctx => {
         });
 
         if (!allowedPost) {
-            return ctx.forbidden({
-                message: `Posts of user with id: ${post.user.id} can see only followers`
-            });
+            return ctx.forbidden(ErrorMessages.ALLOWED_POST);
         }
     }
 
@@ -99,9 +96,7 @@ const getUserPosts = async ctx => {
         });
 
         if (!allowedPosts) {
-            return ctx.forbidden({
-                message: `Posts of user with id: ${profileId} can see only followers`
-            });
+            return ctx.forbidden(ErrorMessages.ALLOWED_POST);
         }
     }
 
@@ -126,7 +121,7 @@ const getUserPosts = async ctx => {
 
 const create = async ctx => {
     if (!ctx.request.body) {
-        return ctx.badRequest({ message: 'Please provide description and title' });
+        return ctx.badRequest(ErrorMessages.POST_VALUES);
     }
 
     const { description, title } = ctx.request.body;
@@ -137,12 +132,12 @@ const create = async ctx => {
         if (_.isArray(reqAttachments)) {
             for (const attachment of reqAttachments) {
                 if (attachment.type !== 'image') {
-                    return ctx.badRequest({ message: 'Attachment must be an image' });
+                    return ctx.badRequest(ErrorMessages.ATTACHMENT_TYPE);
                 }
             }
         } else {
             if (reqAttachments.type !== 'image') {
-                return ctx.badRequest({ message: 'Attachment must be an image' });
+                return ctx.badRequest(ErrorMessages.ATTACHMENT_TYPE);
             }
         }
     }
@@ -200,21 +195,19 @@ const update = async ctx => {
     const post = await Post.scope({ method: ['expand'] }).findByPk(postId);
 
     if (!post) {
-        return ctx.notFound({
-            message: `No post with id ${postId}`
-        });
+        return ctx.notFound(ErrorMessages.NO_POST + `${postId}`);
     }
 
     const userId = ctx.state.user.id;
 
     if (post.user.id !== userId) {
-        return ctx.unauthorized({ message: `You can update only your posts` });
+        return ctx.unauthorized(ErrorMessages.POST_UPDATE_PERMISSION);
     }
 
     const attachments = ctx.request.files?.attachments;
 
     if (!attachments && !ctx.request.body) {
-        return ctx.badRequest({ message: 'No values to updated' });
+        return ctx.badRequest(ErrorMessages.UPDATED_VALUES);
     }
 
     const { description, title, deleteAttachments } = ctx.request.body;
@@ -285,15 +278,13 @@ const remove = async ctx => {
     const post = await Post.findByPk(postId);
 
     if (!post) {
-        return ctx.notFound({
-            message: `No post with id ${postId}`
-        });
+        return ctx.notFound(ErrorMessages.NO_POST + ` ${postId}`);
     }
 
     const userId = ctx.state.user.id;
 
     if (post.userId !== userId) {
-        ctx.unauthorized({ message: `You can delete only your posts` });
+        ctx.unauthorized(ErrorMessages.POST_DELETE_PERMISSION);
     }
 
     const attachments = await Attachment.findAll({ where: { postId } });
