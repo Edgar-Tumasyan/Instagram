@@ -10,42 +10,24 @@ class Post extends Model {
                     primaryKey: true,
                     allowNull: false
                 },
-                title: {
-                    type: DataTypes.STRING,
-                    allowNull: false
-                },
-                description: {
-                    type: DataTypes.STRING,
-                    allowNull: false
-                },
-                userId: {
-                    type: DataTypes.UUID,
-                    allowNull: false
-                }
+                title: { type: DataTypes.STRING, allowNull: false },
+                description: { type: DataTypes.STRING, allowNull: false },
+                userId: { type: DataTypes.UUID, allowNull: false }
             },
             {
                 sequelize,
                 timestamps: true,
-                tableName: 'posts'
+                tableName: 'post'
             }
         );
     }
 
     static associate(models) {
-        Post.belongsTo(models.User, {
-            as: 'user',
-            foreignKey: 'userId'
-        });
+        Post.belongsTo(models.User, { as: 'user', foreignKey: 'userId' });
 
-        Post.hasMany(models.Attachment, {
-            as: 'attachments',
-            foreignKey: 'postId'
-        });
+        Post.hasMany(models.Attachment, { as: 'attachments', foreignKey: 'postId' });
 
-        Post.hasMany(models.Like, {
-            as: 'likes',
-            foreignKey: 'postId'
-        });
+        Post.hasMany(models.Like, { as: 'likes', foreignKey: 'postId' });
     }
 
     static addScopes(models) {
@@ -55,8 +37,8 @@ class Post extends Model {
                     'id',
                     'title',
                     'description',
-                    [literal(`(SELECT count('*') FROM likes WHERE "postId" = "Post"."id")::int`), 'likesCount'],
-                    [literal(`(SELECT count('*') FROM attachments WHERE "postId" = "Post"."id")::int`), 'attachmentsCount']
+                    [literal(`(SELECT count('*') FROM like WHERE "postId" = "Post"."id")::int`), 'likesCount'],
+                    [literal(`(SELECT count('*') FROM attachment WHERE "postId" = "Post"."id")::int`), 'attachmentsCount']
                 ],
                 include: [
                     {
@@ -91,8 +73,8 @@ class Post extends Model {
                     'id',
                     'title',
                     'description',
-                    [literal(`(SELECT count('*') FROM likes WHERE "postId" = "Post"."id")::int`), 'likesCount'],
-                    [literal(`(SELECT count('*') FROM attachments WHERE "postId" = "Post"."id")::int`), 'attachmentsCount']
+                    [literal(`(SELECT count('*') FROM like WHERE "postId" = "Post"."id")::int`), 'likesCount'],
+                    [literal(`(SELECT count('*') FROM attachment WHERE "postId" = "Post"."id")::int`), 'attachmentsCount']
                 ],
                 include: [
                     {
@@ -119,8 +101,8 @@ class Post extends Model {
                     'id',
                     'title',
                     'description',
-                    [literal(`(SELECT count('*') FROM likes WHERE "postId" = "Post"."id")::int`), 'likesCount'],
-                    [literal(`(SELECT count('*') FROM attachments WHERE "postId" = "Post"."id")::int`), 'attachmentsCount']
+                    [literal(`(SELECT count('*') FROM like WHERE "postId" = "Post"."id")::int`), 'likesCount'],
+                    [literal(`(SELECT count('*') FROM attachment WHERE "postId" = "Post"."id")::int`), 'attachmentsCount']
                 ],
                 include: [
                     {
@@ -144,8 +126,8 @@ class Post extends Model {
                     'id',
                     'title',
                     'description',
-                    [literal(`(SELECT count('*') FROM likes WHERE "postId" = "Post"."id")::int`), 'likesCount'],
-                    [literal(`(SELECT count('*') FROM attachments WHERE "postId" = "Post"."id")::int`), 'attachmentsCount']
+                    [literal(`(SELECT count('*') FROM like WHERE "postId" = "Post"."id")::int`), 'likesCount'],
+                    [literal(`(SELECT count('*') FROM attachment WHERE "postId" = "Post"."id")::int`), 'attachmentsCount']
                 ],
                 include: [
                     {
@@ -169,8 +151,8 @@ class Post extends Model {
                     'id',
                     'title',
                     'description',
-                    [literal(`(SELECT count('*') FROM likes WHERE "postId" = "Post"."id")::int`), 'likesCount'],
-                    [literal(`(SELECT count('*') FROM attachments WHERE "postId" = "Post"."id")::int`), 'attachmentsCount']
+                    [literal(`(SELECT count('*') FROM like WHERE "postId" = "Post"."id")::int`), 'likesCount'],
+                    [literal(`(SELECT count('*') FROM attachment WHERE "postId" = "Post"."id")::int`), 'attachmentsCount']
                 ],
                 include: [
                     {
@@ -194,8 +176,8 @@ class Post extends Model {
                     'id',
                     'title',
                     'description',
-                    [literal(`(SELECT count('*') FROM likes WHERE "postId" = "Post"."id")::int`), 'likesCount'],
-                    [literal(`(SELECT count('*') FROM attachments WHERE "postId" = "Post"."id")::int`), 'attachmentsCount']
+                    [literal(`(SELECT count('*') FROM like WHERE "postId" = "Post"."id")::int`), 'likesCount'],
+                    [literal(`(SELECT count('*') FROM attachment WHERE "postId" = "Post"."id")::int`), 'attachmentsCount']
                 ],
                 include: [
                     {
@@ -220,8 +202,8 @@ class Post extends Model {
                     'id',
                     'title',
                     'description',
-                    [literal(`(SELECT count('*') FROM likes WHERE "postId" = "Post"."id")::int`), 'likesCount'],
-                    [literal(`(SELECT count('*') FROM attachments WHERE "postId" = "Post"."id")::int`), 'attachmentsCount']
+                    [literal(`(SELECT count('*') FROM like WHERE "postId" = "Post"."id")::int`), 'likesCount'],
+                    [literal(`(SELECT count('*') FROM attachment WHERE "postId" = "Post"."id")::int`), 'attachmentsCount']
                 ],
                 include: [
                     {

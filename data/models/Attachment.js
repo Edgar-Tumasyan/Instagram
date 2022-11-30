@@ -10,36 +10,21 @@ class Attachment extends Model {
                     primaryKey: true,
                     allowNull: false
                 },
-                postId: {
-                    type: DataTypes.UUID,
-                    allowNull: false
-                },
-                userId: {
-                    type: DataTypes.UUID,
-                    allowNull: false
-                },
-                attachmentUrl: {
-                    type: DataTypes.STRING,
-                    allowNull: false
-                },
-                attachmentPublicId: {
-                    type: DataTypes.STRING,
-                    allowNull: false
-                }
+                postId: { type: DataTypes.UUID, allowNull: false },
+                userId: { type: DataTypes.UUID, allowNull: false },
+                attachmentUrl: { type: DataTypes.STRING, allowNull: false },
+                attachmentPublicId: { type: DataTypes.STRING, allowNull: false }
             },
             {
                 sequelize,
                 timestamps: true,
-                tableName: 'attachments'
+                tableName: 'attachment'
             }
         );
     }
 
     static associate(models) {
-        Attachment.belongsTo(models.Post, {
-            as: 'post',
-            foreignKey: 'postId'
-        });
+        Attachment.belongsTo(models.Post, { as: 'post', foreignKey: 'postId' });
 
         Attachment.belongsTo(models.User, { as: 'user', foreignKey: 'userId' });
     }

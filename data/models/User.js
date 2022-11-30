@@ -12,26 +12,15 @@ class User extends Model {
                     primaryKey: true,
                     allowNull: false
                 },
-                firstname: {
-                    type: DataTypes.STRING,
-                    allowNull: false
-                },
-                lastname: {
-                    type: DataTypes.STRING,
-                    allowNull: false
-                },
+                firstname: { type: DataTypes.STRING, allowNull: false },
+                lastname: { type: DataTypes.STRING, allowNull: false },
                 email: {
                     type: DataTypes.STRING,
                     allowNull: false,
                     unique: true,
-                    validate: {
-                        isEmail: true
-                    }
+                    validate: { isEmail: true }
                 },
-                password: {
-                    type: DataTypes.STRING,
-                    allowNull: false
-                },
+                password: { type: DataTypes.STRING, allowNull: false },
                 role: {
                     type: DataTypes.ENUM,
                     values: _.values(UserRole),
@@ -48,31 +37,19 @@ class User extends Model {
             {
                 sequelize,
                 timestamps: true,
-                tableName: 'users'
+                tableName: 'user'
             }
         );
     }
 
     static associate(models) {
-        User.hasMany(models.Post, {
-            as: 'posts',
-            foreignKey: 'userId'
-        });
+        User.hasMany(models.Post, { as: 'posts', foreignKey: 'userId' });
 
-        User.hasMany(models.Follow, {
-            as: 'followers',
-            foreignKey: 'followerId'
-        });
+        User.hasMany(models.Follow, { as: 'followers', foreignKey: 'followerId' });
 
-        User.hasMany(models.Follow, {
-            as: 'followings',
-            foreignKey: 'followingId'
-        });
+        User.hasMany(models.Follow, { as: 'followings', foreignKey: 'followingId' });
 
-        User.hasMany(models.Attachment, {
-            as: 'attachments',
-            foreignKey: 'userId'
-        });
+        User.hasMany(models.Attachment, { as: 'attachments', foreignKey: 'userId' });
     }
 
     static addScopes(models) {
@@ -83,12 +60,12 @@ class User extends Model {
                     'firstname',
                     'lastname',
                     'avatar',
-                    [literal(`(SELECT count('*') FROM posts WHERE "userId" = "User"."id")::int`), 'postsCount'],
-                    [literal(`(SELECT count('*') FROM follows WHERE "followingId" = "User"."id")::int`), 'followersCount'],
-                    [literal(`(SELECT count('*') FROM follows WHERE "followerId" = "User"."id")::int`), 'followingsCount'],
+                    [literal(`(SELECT count('*') FROM post WHERE "userId" = "User"."id")::int`), 'postsCount'],
+                    [literal(`(SELECT count('*') FROM follow WHERE "followingId" = "User"."id")::int`), 'followersCount'],
+                    [literal(`(SELECT count('*') FROM follow WHERE "followerId" = "User"."id")::int`), 'followingsCount'],
                     [
                         literal(
-                            `(Select CASE (Select COALESCE((Select status from follows WHERE "followerId" =
+                            `(Select CASE (Select COALESCE((Select status from follow WHERE "followerId" =
                         '${userId}' and "followingId" = '${profileId}'), null ))
                         WHEN 'pending' THEN 'pending'
                         WHEN 'approved' THEN 'approved'
@@ -110,7 +87,7 @@ class User extends Model {
                     'avatar',
                     [
                         literal(
-                            `(Select CASE (Select COALESCE((Select status from follows WHERE "followerId" =
+                            `(Select CASE (Select COALESCE((Select status from follow WHERE "followerId" =
                         '${userId}' and "followingId" = "User"."id"), null ))
                         WHEN 'pending' THEN 'pending'
                         WHEN 'approved' THEN 'approved'
@@ -134,7 +111,7 @@ class User extends Model {
                     'profileCategory',
                     [
                         literal(
-                            `(Select CASE (Select COALESCE((Select status from follows WHERE "followerId" =
+                            `(Select CASE (Select COALESCE((Select status from follow WHERE "followerId" =
                         '${userId}' and "followingId" = "User"."id"), null ))
                         WHEN 'pending' THEN 'pending'
                         WHEN 'approved' THEN 'approved'
@@ -165,7 +142,7 @@ class User extends Model {
                     'profileCategory',
                     [
                         literal(
-                            `(Select CASE (Select COALESCE((Select status from follows WHERE "followerId" =
+                            `(Select CASE (Select COALESCE((Select status from follow WHERE "followerId" =
                         '${userId}' and "followingId" = "User"."id"), null ))
                         WHEN 'pending' THEN 'pending'
                         WHEN 'approved' THEN 'approved'
@@ -196,7 +173,7 @@ class User extends Model {
                     'profileCategory',
                     [
                         literal(
-                            `(Select CASE (Select COALESCE((Select status from follows WHERE "followerId" =
+                            `(Select CASE (Select COALESCE((Select status from follow WHERE "followerId" =
                         '${userId}' and "followingId" = "User"."id"), null ))
                         WHEN 'pending' THEN 'pending'
                         WHEN 'approved' THEN 'approved'
@@ -224,9 +201,9 @@ class User extends Model {
                     'firstname',
                     'lastname',
                     'avatar',
-                    [literal(`(SELECT count('*') FROM posts WHERE "userId" = "User"."id")::int`), 'postsCount'],
-                    [literal(`(SELECT count('*') FROM follows WHERE "followingId" = "User"."id")::int`), 'followersCount'],
-                    [literal(`(SELECT count('*') FROM follows WHERE "followerId" = "User"."id")::int`), 'followingsCount']
+                    [literal(`(SELECT count('*') FROM post WHERE "userId" = "User"."id")::int`), 'postsCount'],
+                    [literal(`(SELECT count('*') FROM follow WHERE "followingId" = "User"."id")::int`), 'followersCount'],
+                    [literal(`(SELECT count('*') FROM follow WHERE "followerId" = "User"."id")::int`), 'followingsCount']
                 ]
             };
         });

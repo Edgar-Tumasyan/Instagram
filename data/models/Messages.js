@@ -1,6 +1,6 @@
 const { DataTypes, Model } = require('sequelize');
 
-class Like extends Model {
+class Message extends Model {
     static init(sequelize) {
         return super.init(
             {
@@ -10,22 +10,23 @@ class Like extends Model {
                     primaryKey: true,
                     allowNull: false
                 },
+                text: { type: DataTypes.TEXT, allowNull: false },
                 userId: { type: DataTypes.UUID, allowNull: false },
-                postId: { type: DataTypes.UUID, allowNull: false }
+                threadId: { type: DataTypes.UUID, allowNull: false }
             },
             {
                 sequelize,
                 timestamps: true,
-                tableName: 'like'
+                tableName: 'message'
             }
         );
     }
 
     static associate(models) {
-        Like.belongsTo(models.Post, { as: 'post', foreignKey: 'postId' });
+        Message.belongsTo(models.User, { as: 'user', foreignKey: 'userId' });
 
-        Like.belongsTo(models.User, { as: 'user', foreignKey: 'userId' });
+        Message.belongsTo(models.Thread, { as: 'thread', foreignKey: 'threadId' });
     }
 }
 
-module.exports = Like;
+module.exports = Message;

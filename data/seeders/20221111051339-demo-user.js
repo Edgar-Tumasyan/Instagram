@@ -1,5 +1,5 @@
 const { v4: uuidV4 } = require('uuid');
-const { faker } = require('@faker-js/faker');
+const faker = require('@faker-js/faker');
 
 module.exports = {
     up: async function (queryInterface) {
@@ -14,7 +14,6 @@ module.exports = {
             const role = 'user';
             const createdAt = new Date();
             const updatedAt = new Date();
-            const avatar = faker.internet.avatar();
 
             users.push({
                 id,
@@ -24,15 +23,14 @@ module.exports = {
                 password,
                 role,
                 createdAt,
-                updatedAt,
-                avatar
+                updatedAt
             });
         }
 
-        await queryInterface.bulkInsert('users', users, {});
+        await queryInterface.bulkInsert('user', users, {});
     },
 
     async down(queryInterface) {
-        await queryInterface.bulkDelete('users', null, {});
+        await queryInterface.bulkDelete('user', null, {});
     }
 };
