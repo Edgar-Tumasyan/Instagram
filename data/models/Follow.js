@@ -37,7 +37,7 @@ class Follow extends Model {
     static addScopes() {
         Follow.addScope('followedUsers', followerId => {
             return {
-                attributes: [[literal(`(Select id from user where id = "Follow"."followingId")`), 'userId']],
+                attributes: [[literal(`(Select id from "user" where id = "Follow"."followingId")`), 'userId']],
                 where: { followerId }
             };
         });
