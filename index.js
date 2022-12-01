@@ -4,6 +4,7 @@ const io = require('socket.io')(server);
 
 const config = require('./config');
 const Routes = require('./routes');
+const socketConnection = require('./service/socket');
 
 const port = config.PORT || 3000;
 
@@ -13,10 +14,7 @@ app.use(require('./middleware/restify')());
 app.use(Routes.routes());
 app.use(Routes.allowedMethods());
 
-io.on('connection', () => {
-    console.log('connected');
-    /* … */
-});
+io.on('connection', socketConnection);
 
 server.listen(port, () => {
     console.log(`Server running on port: ${port}`);
