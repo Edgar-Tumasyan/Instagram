@@ -1,4 +1,4 @@
-const { DataTypes, Model } = require('sequelize');
+const { DataTypes, Model, literal, Op } = require('sequelize');
 const _ = require('lodash');
 const { ThreadStatus } = require('../lcp');
 
@@ -35,6 +35,19 @@ class ThreadRequest extends Model {
         ThreadRequest.belongsTo(models.User, { as: 'reciever', foreignKey: 'receiverId' });
 
         ThreadRequest.belongsTo(models.Thread, { as: 'threads', foreignKey: 'threadId' });
+    }
+
+    static addScopes() {
+        ThreadRequest.addScope('existingThread', (userId, profileId) => {
+            return {
+                where: {
+                    [Op.or]: [
+                        { senderId: userId, receiverId: profileId },
+                        { senderId: profileId, receiverId: userId }
+                    ]
+                }
+            };
+        });
     }
 }
 

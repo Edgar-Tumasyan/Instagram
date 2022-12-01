@@ -22,5 +22,8 @@ module.exports = {
     NO_FOLLOW: `You don't follow user with id`,
     EXISTING_LIKE: 'You already like this post',
     LIKE_PERMISSION: 'Posts of this user can like only followers',
-    NO_LIKE: `You don't like this post`
+    NO_LIKE: `You don't like this post`,
+    NO_THREAD_USER: 'You are not a user this thread',
+    EXISTING_PENDING_REQUEST: 'You already send your first message, please wait user confirmation',
+    EXISTING_DECLINE_REQUEST: 'User decline your request invitation'
 };

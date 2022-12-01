@@ -1,6 +1,4 @@
 const { Follow, Thread, ThreadRequest, ThreadUser } = require('../data/models');
-const { Op } = require('sequelize');
-// const ErrorMessages = require('../constants/ErrorMessages');
 
 const findAll = async ctx => {
     const userId = ctx.state.user.id;
@@ -13,9 +11,7 @@ const findAll = async ctx => {
 
     const threadIds = data.map(thread => thread.threadId);
 
-    const threads = await Thread.findAll({
-        where: { id: { [Op.in]: threadIds } }
-    });
+    const threads = await Thread.scope({ method: ['allThreads', threadIds] }).findAll();
 
     ctx.body = { threads };
 };
@@ -24,13 +20,7 @@ const create = async ctx => {
     const { profileId } = ctx.params;
     const userId = ctx.state.user.id;
 
-    const existingThread = await ThreadRequest.findOne({
-        where: {
-            [Op.or]: [
-                { senderId: userId, receiverId: profileId },
-                { senderId: profileId, receiverId: userId }
-            ]
-        },
+    const existingThread = await ThreadRequest.scope({ method: ['existingThread', userId, profileId] }).findOne({
         raw: true
     });
 

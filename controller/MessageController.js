@@ -1,8 +1,35 @@
-const { Follow, Message, Thread, ThreadRequest, ThreadUser, User } = require('../data/models');
+const { Follow, Message, Thread, ThreadRequest, ThreadUser } = require('../data/models');
 const ErrorMessages = require('../constants/ErrorMessages');
 
-const sendMessage = async ctx => {
-    // return (ctx.body = { text });
+const create = async ctx => {
+    const { threadId, profileId } = ctx.params;
+    const userId = ctx.state.user.id;
+
+    const threadUser = await ThreadUser.findOne({ where: { threadId, userId } });
+
+    if (!threadUser) {
+        return ctx.badRequest(ErrorMessages.NO_THREAD_USER);
+    }
+
+    const isFollowed = await Follow.findOne({ where: { followerId: userId, followingId: profileId } });
+
+    if (!isFollowed) {
+        const existingRequest = await ThreadRequest.findOne({ where: { senderId: userId, receiverId: profileId }, raw: true });
+
+        if (existingRequest && existingRequest.status === 'pending') {
+            return ctx.badRequest(ErrorMessages.EXISTING_PENDING_REQUEST);
+        } else if (existingRequest && existingRequest.status === 'decline') {
+            return ctx.badRequest(ErrorMessages.EXISTING_DECLINE_REQUEST);
+        }
+    }
+
+    const text = ctx.request.body;
+
+    const message = await Message.create({ text, userId, threadId }, { raw: true });
+
+    await Thread.update({ lastMessageId: message.id }, { where: { id: message.threadId } });
+
+    return ctx.created({ message });
 };
 
-module.exports = { sendMessage };
+module.exports = { create };
