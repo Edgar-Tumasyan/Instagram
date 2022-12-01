@@ -1,13 +1,10 @@
 const { Follow, Thread, ThreadRequest, ThreadUser } = require('../data/models');
+const ErrorMessages = require('../constants/ErrorMessages');
 
 const findAll = async ctx => {
     const userId = ctx.state.user.id;
 
-    const data = await ThreadUser.findAll({
-        attributes: ['threadId'],
-        where: { userId },
-        raw: true
-    });
+    const data = await ThreadUser.scope({ method: ['threads', userId] }).findAll({ raw: true });
 
     const threadIds = data.map(thread => thread.threadId);
 
@@ -19,6 +16,10 @@ const findAll = async ctx => {
 const create = async ctx => {
     const { profileId } = ctx.params;
     const userId = ctx.state.user.id;
+
+    if (userId === profileId) {
+        return ctx.badRequest(ErrorMessages.NO_CREATE_THREAD);
+    }
 
     const existingThread = await ThreadRequest.scope({ method: ['existingThread', userId, profileId] }).findOne({
         raw: true

@@ -5,7 +5,7 @@ const create = async ctx => {
     const { threadId, profileId } = ctx.params;
     const userId = ctx.state.user.id;
 
-    const threadUser = await ThreadUser.findOne({ where: { threadId, userId } });
+    const threadUser = await ThreadUser.findOne({ where: { threadId, userId }, raw: true });
 
     if (!threadUser) {
         return ctx.badRequest(ErrorMessages.NO_THREAD_USER);
@@ -14,11 +14,13 @@ const create = async ctx => {
     const isFollowed = await Follow.findOne({ where: { followerId: userId, followingId: profileId } });
 
     if (!isFollowed) {
+        const existingMessage = await Message.findOne({ where: { userId, threadId } });
+
         const existingRequest = await ThreadRequest.findOne({ where: { senderId: userId, receiverId: profileId }, raw: true });
 
-        if (existingRequest && existingRequest.status === 'pending') {
+        if (existingMessage && existingRequest && existingRequest.status === 'pending') {
             return ctx.badRequest(ErrorMessages.EXISTING_PENDING_REQUEST);
-        } else if (existingRequest && existingRequest.status === 'decline') {
+        } else if (existingMessage && existingRequest && existingRequest.status === 'decline') {
             return ctx.badRequest(ErrorMessages.EXISTING_DECLINE_REQUEST);
         }
     }

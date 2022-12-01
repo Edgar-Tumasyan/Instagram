@@ -32,6 +32,12 @@ class ThreadUser extends Model {
 
         ThreadUser.belongsTo(models.User, { as: 'user', foreignKey: 'userId' });
     }
+
+    static addScopes() {
+        ThreadUser.addScope('threads', userId => {
+            return { attributes: ['threadId'], where: { userId } };
+        });
+    }
 }
 
 module.exports = ThreadUser;
