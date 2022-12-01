@@ -1,4 +1,6 @@
 const app = new (require('koa'))();
+const server = require('http').createServer(app.callback());
+const io = require('socket.io')(server);
 
 const config = require('./config');
 const Routes = require('./routes');
@@ -11,6 +13,11 @@ app.use(require('./middleware/restify')());
 app.use(Routes.routes());
 app.use(Routes.allowedMethods());
 
-app.listen(port, () => {
+io.on('connection', () => {
+    console.log('connected');
+    /* … */
+});
+
+server.listen(port, () => {
     console.log(`Server running on port: ${port}`);
 });
