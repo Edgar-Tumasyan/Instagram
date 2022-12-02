@@ -1,5 +1,6 @@
-const { Post, Like, User, Follow } = require('../data/models');
+const { Post, Like, User, Follow, Notification } = require('../data/models');
 const ErrorMessages = require('../constants/ErrorMessages');
+const { NotificationType } = require('../data/lcp');
 
 const postLikesUsers = async ctx => {
     const { limit, offset } = ctx.state.paginate;
@@ -32,9 +33,7 @@ const create = async ctx => {
 
     const userId = ctx.state.user.id;
 
-    const existingLike = await Like.findOne({
-        where: { postId, userId }
-    });
+    const existingLike = await Like.findOne({ where: { postId, userId } });
 
     if (existingLike) {
         return ctx.badRequest(ErrorMessages.EXISTING_LIKE);
@@ -42,11 +41,7 @@ const create = async ctx => {
 
     if (post.user.profileCategory === 'private' && userId !== post.user.id) {
         const allowedLike = await Follow.findOne({
-            where: {
-                followerId: userId,
-                followingId: post.user.id,
-                status: 'approved'
-            }
+            where: { followerId: userId, followingId: post.user.id, status: 'approved' }
         });
 
         if (!allowedLike) {
@@ -55,6 +50,8 @@ const create = async ctx => {
     }
 
     await Like.create({ userId, postId });
+
+    await Notification.create({ type: NotificationType.POST_LIKE, senderId: userId, receiverId: post.user.id, postId });
 
     const data = await Post.scope({ method: ['singlePost'] }).findByPk(postId);
 

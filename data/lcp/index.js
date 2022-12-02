@@ -3,5 +3,6 @@ module.exports = {
     ProfileCategory: require('./ProfileCategory'),
     FollowStatus: require('./FollowStatus'),
     ThreadType: require('./ThreadType'),
-    ThreadStatus: require('./ThreadStatus')
+    ThreadStatus: require('./ThreadStatus'),
+    NotificationType: require('./NotificationType')
 };

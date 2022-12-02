@@ -1,6 +1,6 @@
+const { FollowStatus, NotificationType } = require('../data/lcp');
+const { Follow, User, Notification } = require('../data/models');
 const ErrorMessages = require('../constants/ErrorMessages');
-const { Follow, User } = require('../data/models');
-const { FollowStatus } = require('../data/lcp');
 
 const getUserFollowers = async ctx => {
     const { limit, offset } = ctx.state.paginate;
@@ -83,10 +83,16 @@ const create = async ctx => {
         });
     }
 
-    await Follow.create({
-        followerId: userId,
-        followingId: profileId,
-        status: FollowStatus.APPROVED
+    const follow = await Follow.create(
+        { followerId: userId, followingId: profileId, status: FollowStatus.APPROVED },
+        { raw: true }
+    );
+
+    await Notification.create({
+        type: NotificationType.USER_FOLLOW,
+        senderId: userId,
+        receiverId: profileId,
+        followId: follow.id
     });
 
     return ctx.created({ message: `You follow user with id: ${profileId}` });
@@ -96,25 +102,15 @@ const acceptFollowInvitation = async ctx => {
     const followingId = ctx.state.user.id;
     const { followerId } = ctx.params;
 
-    const isFollowed = await Follow.findOne({
-        where: { followingId, followerId },
-        raw: true
-    });
+    const isFollowed = await Follow.findOne({ where: { followingId, followerId }, raw: true });
 
     if (!isFollowed) {
         return ctx.badRequest(ErrorMessages.FOLLOW_REQUEST_CANCEL);
     }
 
-    await Follow.update(
-        {
-            status: FollowStatus.APPROVED
-        },
-        { where: { followerId, followingId } }
-    );
+    await Follow.update({ status: FollowStatus.APPROVED }, { where: { followerId, followingId } });
 
-    return ctx.ok({
-        message: `You accept follow invitation user with id: ${followerId}`
-    });
+    return ctx.ok({ message: `You accept follow invitation user with id: ${followerId}` });
 };
 
 const declineFollowInvitation = async ctx => {
@@ -139,10 +135,7 @@ const cancelFollowInvitation = async ctx => {
     const followingId = ctx.params.profileId;
     const followerId = ctx.state.user.id;
 
-    const isFollowed = await Follow.findOne({
-        where: { followingId, followerId },
-        raw: true
-    });
+    const isFollowed = await Follow.findOne({ where: { followingId, followerId }, raw: true });
 
     if (!isFollowed) {
         return ctx.badRequest({

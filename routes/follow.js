@@ -1,21 +1,21 @@
 const Router = require('koa-router');
 
-const UserFollowController = require('../controller/UserFollowController');
+const FollowController = require('../controller/FollowController');
 const auth = require('../middleware/auth');
 
 const router = new Router({
     prefix: '/users'
 });
 
-router.get('/:profileId/followers', auth, UserFollowController.getUserFollowers);
+router.get('/:profileId/followers', auth, FollowController.getUserFollowers);
 
-router.get('/:profileId/followings', auth, UserFollowController.getUserFollowings);
+router.get('/:profileId/followings', auth, FollowController.getUserFollowings);
 
-router.post('/:profileId/follow', auth, UserFollowController.create);
-router.post('/follow-request/:followerId', auth, UserFollowController.acceptFollowInvitation);
+router.post('/:profileId/follow', auth, FollowController.create);
+router.post('/follow-request/:followerId', auth, FollowController.acceptFollowInvitation);
 
-router.delete('/follow-request/:followerId', auth, UserFollowController.declineFollowInvitation);
-router.delete('/:profileId/follow-request', auth, UserFollowController.cancelFollowInvitation);
-router.delete('/:profileId/unfollow', auth, UserFollowController.remove);
+router.delete('/follow-request/:followerId', auth, FollowController.declineFollowInvitation);
+router.delete('/:profileId/follow-request', auth, FollowController.cancelFollowInvitation);
+router.delete('/:profileId/unfollow', auth, FollowController.remove);
 
 module.exports = router;
