@@ -1,7 +1,7 @@
 const app = new (require('koa'))();
 const server = require('http').createServer(app.callback());
 const { Server } = require('socket.io');
-const io = new Server(server); //, { cors: { origin: '*' } });
+const io = new Server(server, { cors: { origin: '*' } });
 
 const config = require('./config');
 const Routes = require('./routes');
