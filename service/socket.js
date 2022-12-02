@@ -1,13 +1,27 @@
 const verifyToken = require('../components/verifyToken');
 
-module.exports = async socket => {
-    const { token } = socket.handshake.query;
+module.exports = {
+    connect: io => {
+        global.io = io;
 
-    if (!token) {
-        throw new Error('Authentication invalid');
+        io.use(async (socket, next) => {
+            const { token } = socket.handshake.query;
+
+            if (!token) {
+                return next(new Error('Authentication failed'));
+            }
+
+            const payload = await verifyToken(token);
+
+            if (!payload) {
+                return next(new Error('Authentication failed'));
+            }
+
+            const { id } = payload;
+
+            socket.join(id);
+
+            return next();
+        });
     }
-
-    const payload = await verifyToken(token);
-
-    const { id } = payload;
 };

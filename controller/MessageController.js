@@ -1,5 +1,6 @@
 const { Follow, Message, Thread, ThreadRequest, ThreadUser } = require('../data/models');
 const ErrorMessages = require('../constants/ErrorMessages');
+const { Op } = require('sequelize');
 
 const create = async ctx => {
     const { threadId, profileId } = ctx.params;
@@ -30,6 +31,14 @@ const create = async ctx => {
     const message = await Message.create({ text, userId, threadId }, { raw: true });
 
     await Thread.update({ lastMessageId: message.id }, { where: { id: message.threadId } });
+
+    const receiverIds = await ThreadUser.findAll({
+        attributes: ['userId'],
+        where: { threadId, userId: { [Op.ne]: userId } },
+        raw: true
+    });
+
+    receiverIds.forEach(receiverId => global.io.to(receiverId.userId).emit('message', { data: message }));
 
     return ctx.created({ message });
 };
