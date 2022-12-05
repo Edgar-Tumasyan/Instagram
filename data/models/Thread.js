@@ -1,6 +1,6 @@
 const { DataTypes, Model, literal, Op } = require('sequelize');
-const _ = require('lodash');
 const { ThreadType } = require('../lcp');
+const _ = require('lodash');
 
 class Thread extends Model {
     static init(sequelize) {
@@ -40,7 +40,7 @@ class Thread extends Model {
                     'id',
                     'type',
                     'lastMessageId',
-                    [literal(`(Select text FROM message WHERE "id" = "Thread"."lastMessageId")`), 'message']
+                    [literal(`(SELECT text FROM message WHERE "id" = "Thread"."lastMessageId")`), 'message']
                 ],
                 where: { id: { [Op.in]: threadIds } }
             };

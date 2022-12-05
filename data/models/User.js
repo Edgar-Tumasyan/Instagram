@@ -1,6 +1,6 @@
 const { DataTypes, Model, literal, Op } = require('sequelize');
-const _ = require('lodash');
 const { UserRole, ProfileCategory } = require('../lcp');
+const _ = require('lodash');
 
 class User extends Model {
     static init(sequelize) {
@@ -60,17 +60,17 @@ class User extends Model {
                     'firstname',
                     'lastname',
                     'avatar',
-                    [literal(`(SELECT count('*') FROM post WHERE "userId" = "User"."id")::int`), 'postsCount'],
-                    [literal(`(SELECT count('*') FROM follow WHERE "followingId" = "User"."id")::int`), 'followersCount'],
-                    [literal(`(SELECT count('*') FROM follow WHERE "followerId" = "User"."id")::int`), 'followingsCount'],
+                    [literal(`(SELECT COUNT('*') FROM post WHERE "userId" = "User"."id")::int`), 'postsCount'],
+                    [literal(`(SELECT COUNT('*') FROM follow WHERE "followingId" = "User"."id")::int`), 'followersCount'],
+                    [literal(`(SELECT COUNT('*') FROM follow WHERE "followerId" = "User"."id")::int`), 'followingsCount'],
                     [
                         literal(
-                            `(Select CASE (Select COALESCE((Select status from follow WHERE "followerId" =
-                        '${userId}' and "followingId" = '${profileId}'), null ))
-                        WHEN 'pending' THEN 'pending'
-                        WHEN 'approved' THEN 'approved'
-                        ELSE 'unfollow'
-                        END as status)`
+                            `(SELECT CASE (SELECT COALESCE((SELECT status FROM follow WHERE "followerId" =
+                                    '${userId}' AND "followingId" = '${profileId}'), NULL ))
+                                     WHEN 'pending' THEN 'pending'
+                                     WHEN 'approved' THEN 'approved'
+                                   ELSE 'unfollow'
+                                   END as status)`
                         ),
                         'followStatus'
                     ]
@@ -87,12 +87,12 @@ class User extends Model {
                     'avatar',
                     [
                         literal(
-                            `(Select CASE (Select COALESCE((Select status from follow WHERE "followerId" =
-                        '${userId}' and "followingId" = "User"."id"), null ))
-                        WHEN 'pending' THEN 'pending'
-                        WHEN 'approved' THEN 'approved'
-                        ELSE 'unfollow'
-                        END as status)`
+                            `(SELECT CASE (SELECT COALESCE((SELECT status FROM follow WHERE "followerId" =
+                                    '${userId}' AND "followingId" = "User"."id"), NULL ))
+                                   WHEN 'pending' THEN 'pending'
+                                   WHEN 'approved' THEN 'approved'
+                                   ELSE 'unfollow'
+                                   END as status)`
                         ),
                         'followStatus'
                     ]
@@ -111,12 +111,12 @@ class User extends Model {
                     'profileCategory',
                     [
                         literal(
-                            `(Select CASE (Select COALESCE((Select status from follow WHERE "followerId" =
-                        '${userId}' and "followingId" = "User"."id"), null ))
-                        WHEN 'pending' THEN 'pending'
-                        WHEN 'approved' THEN 'approved'
-                        ELSE 'unfollow'
-                        END as status)`
+                            `(SELECT CASE (SELECT COALESCE((SELECT status FROM follow WHERE "followerId" =
+                                    '${userId}' AND "followingId" = "User"."id"), NULL ))
+                                   WHEN 'pending' THEN 'pending'
+                                   WHEN 'approved' THEN 'approved'
+                                   ELSE 'unfollow'
+                                   END as status)`
                         ),
                         'followStatus'
                     ]
@@ -142,12 +142,12 @@ class User extends Model {
                     'profileCategory',
                     [
                         literal(
-                            `(Select CASE (Select COALESCE((Select status from follow WHERE "followerId" =
-                        '${userId}' and "followingId" = "User"."id"), null ))
-                        WHEN 'pending' THEN 'pending'
-                        WHEN 'approved' THEN 'approved'
-                        ELSE 'unfollow'
-                        END as status)`
+                            `(SELECT CASE (SELECT COALESCE((SELECT status FROM follow WHERE "followerId" =
+                                    '${userId}' AND "followingId" = "User"."id"), NULL ))
+                                   WHEN 'pending' THEN 'pending'
+                                   WHEN 'approved' THEN 'approved'
+                                   ELSE 'unfollow'
+                                   END as status)`
                         ),
                         'followStatus'
                     ]
@@ -173,12 +173,12 @@ class User extends Model {
                     'profileCategory',
                     [
                         literal(
-                            `(Select CASE (Select COALESCE((Select status from follow WHERE "followerId" =
-                        '${userId}' and "followingId" = "User"."id"), null ))
-                        WHEN 'pending' THEN 'pending'
-                        WHEN 'approved' THEN 'approved'
-                        ELSE 'unfollow'
-                        END as status)`
+                            `(SELECT CASE (SELECT COALESCE((SELECT status FROM follow WHERE "followerId" =
+                                    '${userId}' AND "followingId" = "User"."id"), NULL ))
+                                   WHEN 'pending' THEN 'pending'
+                                   WHEN 'approved' THEN 'approved'
+                                   ELSE 'unfollow'
+                                   END as status)`
                         ),
                         'followStatus'
                     ]
@@ -201,9 +201,9 @@ class User extends Model {
                     'firstname',
                     'lastname',
                     'avatar',
-                    [literal(`(SELECT count('*') FROM post WHERE "userId" = "User"."id")::int`), 'postsCount'],
-                    [literal(`(SELECT count('*') FROM follow WHERE "followingId" = "User"."id")::int`), 'followersCount'],
-                    [literal(`(SELECT count('*') FROM follow WHERE "followerId" = "User"."id")::int`), 'followingsCount']
+                    [literal(`(SELECT COUNT('*') FROM post WHERE "userId" = "User"."id")::int`), 'postsCount'],
+                    [literal(`(SELECT COUNT('*') FROM follow WHERE "followingId" = "User"."id")::int`), 'followersCount'],
+                    [literal(`(SELECT COUNT('*') FROM follow WHERE "followerId" = "User"."id")::int`), 'followingsCount']
                 ]
             };
         });

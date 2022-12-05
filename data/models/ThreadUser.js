@@ -10,14 +10,8 @@ class ThreadUser extends Model {
                     primaryKey: true,
                     allowNull: false
                 },
-                threadId: {
-                    type: DataTypes.UUID,
-                    allowNull: false
-                },
-                userId: {
-                    type: DataTypes.UUID,
-                    allowNull: false
-                }
+                threadId: { type: DataTypes.UUID, allowNull: false },
+                userId: { type: DataTypes.UUID, allowNull: false }
             },
             {
                 sequelize,

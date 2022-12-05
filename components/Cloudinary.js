@@ -5,10 +5,7 @@ cloudinary.config(config.cloudinary);
 
 class Cloudinary {
     static async upload(file, path) {
-        return await cloudinary.uploader.upload(file, {
-            use_filename: true,
-            folder: path
-        });
+        return await cloudinary.uploader.upload(file, { use_filename: true, folder: path });
     }
 
     static async delete(file) {

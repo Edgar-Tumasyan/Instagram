@@ -1,8 +1,8 @@
 module.exports = {
     UserRole: require('./UserRole'),
-    ProfileCategory: require('./ProfileCategory'),
-    FollowStatus: require('./FollowStatus'),
     ThreadType: require('./ThreadType'),
+    FollowStatus: require('./FollowStatus'),
     ThreadStatus: require('./ThreadStatus'),
+    ProfileCategory: require('./ProfileCategory'),
     NotificationType: require('./NotificationType')
 };

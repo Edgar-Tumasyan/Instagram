@@ -8,7 +8,6 @@ const router = new Router({
 });
 
 router.get('/:profileId/followers', auth, FollowController.getUserFollowers);
-
 router.get('/:profileId/followings', auth, FollowController.getUserFollowings);
 
 router.post('/:profileId/follow', auth, FollowController.create);

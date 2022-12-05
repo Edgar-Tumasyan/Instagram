@@ -5,7 +5,7 @@ const findAll = async ctx => {
     const receiverId = ctx.state.user.id;
     const { limit, offset } = ctx.state.paginate;
 
-    const notifications = await Notification.scope({ method: ['all', receiverId] }).findAll({ raw: true });
+    const notifications = await Notification.scope({ method: ['allNotifications', receiverId] }).findAll({ raw: true });
 
     await Notification.update({ isSeen: true }, { where: { receiverId } });
 
