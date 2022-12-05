@@ -35,20 +35,93 @@ class Notification extends Model {
     }
 
     static addScopes() {
+        Notification.addScope('all', receiverId => {
+            return {
+                attributes: [
+                    [literal(`DISTINCT (CASE type WHEN 'postLike' THEN "postId" ELSE id END )`), 'id'],
+                    [literal(`CASE type WHEN 'postLike' THEN "postId" ELSE "followId" END `), 'resourceId'],
+                    [
+                        literal(`CASE type WHEN 'postLike' THEN (SELECT "senderId" FROM notification WHERE
+                                       "postId" = (SELECT id FROM post WHERE id = "Notification"."postId") AND
+                                       "createdAt" = (SELECT MAX("createdAt") FROM notification WHERE "postId" = 
+                                       "Notification"."postId")) 
+                                     ELSE "senderId" END`),
+                        'senderId'
+                    ],
+                    [
+                        literal(
+                            `CASE type WHEN 'postLike' THEN (SELECT count('*') FROM "like" WHERE "postId" = "Notification"."postId")
+                             ELSE null END`
+                        ),
+                        'likesCount'
+                    ],
+                    [
+                        literal(
+                            `CASE type WHEN 'postLike' THEN (SELECT MAX("createdAt") FROM notification WHERE "postId" = "Notification"."postId")
+                             ELSE "createdAt" END`
+                        ),
+                        'createdAt'
+                    ],
+                    'isSeen',
+                    'type'
+                ],
+                where: { receiverId },
+                group: ['id', 'type'],
+                order: [['createdAt', 'DESC']]
+            };
+        });
+
         Notification.addScope('allNotifications', receiverId => {
             return {
                 attributes: [
-                    'id',
-                    'type',
+                    [literal(`DISTINCT (CASE type WHEN 'postLike' THEN "postId" ELSE id END )`), 'id'],
+                    [literal(`CASE type WHEN 'postLike' THEN "postId" ELSE "followId" END `), 'resourceId'],
+                    [
+                        literal(`CASE type WHEN 'postLike' THEN (SELECT "senderId" FROM notification WHERE
+                                       "postId" = (SELECT id FROM post WHERE id = "Notification"."postId") AND
+                                       "createdAt" = (SELECT MAX("createdAt") FROM notification WHERE "postId" = 
+                                       "Notification"."postId")) 
+                                     ELSE "senderId" END`),
+                        'senderId'
+                    ],
+                    [
+                        literal(`CASE type WHEN 'postLike' THEN (SELECT firstname FROM "user" WHERE id = 
+                                       (SELECT "senderId" FROM notification WHERE "postId" = 
+                                       (SELECT id FROM post WHERE id = "Notification"."postId") AND
+                                       "createdAt" = (SELECT MAX("createdAt") FROM notification WHERE "postId" =
+                                       "Notification"."postId")))  
+                                     ELSE (SELECT firstname FROM "user" WHERE id = "Notification"."senderId") END`),
+                        'firstname'
+                    ],
+                    [
+                        literal(`CASE type WHEN 'postLike' THEN (SELECT lastname FROM "user" WHERE id = 
+                                       (SELECT "senderId" FROM notification WHERE "postId" = 
+                                       (SELECT id FROM post WHERE id = "Notification"."postId") AND
+                                       "createdAt" = (SELECT MAX("createdAt") FROM notification WHERE "postId" = 
+                                       "Notification"."postId")))  
+                                     ELSE (SELECT lastname FROM "user" WHERE id = "Notification"."senderId") END`),
+                        'lastname'
+                    ],
+                    [
+                        literal(
+                            `CASE type WHEN 'postLike' THEN (SELECT count('*') FROM "like" WHERE "postId" = "Notification"."postId")
+                             ELSE null END`
+                        ),
+                        'likesCount'
+                    ],
+                    [
+                        literal(
+                            `CASE type WHEN 'postLike' THEN (SELECT MAX("createdAt") FROM notification WHERE "postId" = "Notification"."postId")
+                             ELSE "createdAt" END`
+                        ),
+                        'createdAt'
+                    ],
                     'isSeen',
-                    'isRead',
-                    'senderId',
-                    [literal(`CASE type WHEN 'postLike' THEN 'postLike' ELSE 'userFollow' END`), 'type'],
-                    [literal(`CASE type WHEN 'postLike' THEN "postId" ELSE "followId" END`), 'resourceId'],
-                    [literal(`(Select firstname from "user" where id = "Notification"."senderId")`), 'firstname'],
-                    [literal(`(Select lastname from "user" where id = "Notification"."senderId")`), 'lasttname']
+                    'type'
                 ],
-                where: { receiverId }
+                where: { receiverId },
+                group: ['id', 'type'],
+                order: [['createdAt', 'DESC']]
             };
         });
     }

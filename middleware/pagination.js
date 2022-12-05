@@ -7,7 +7,7 @@ module.exports = () => async (ctx, next) => {
     offset = Number(offset);
 
     if (!limit || limit <= 0 || _.isNaN(limit)) {
-        limit = 2;
+        limit = 10;
     }
 
     if (!offset || offset < 0 || _.isNaN(offset)) {
