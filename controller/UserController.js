@@ -7,8 +7,6 @@ const _ = require('lodash');
 const { User } = require('../data/models');
 const config = require('../config');
 
-// create user update functionality
-
 const findAll = async ctx => {
     const userId = ctx.state.user.id;
 
@@ -16,10 +14,7 @@ const findAll = async ctx => {
 
     const { rows: users, count: total } = await User.scope({
         method: ['profiles', userId]
-    }).findAndCountAll({
-        offset,
-        limit
-    });
+    }).findAndCountAll({ offset, limit });
 
     return ctx.ok({
         users,
@@ -110,18 +105,9 @@ const uploadAvatar = async ctx => {
 
     const id = ctx.state.user.id;
 
-    await User.update(
-        { avatar: avatar.secure_url, avatarPublicId: avatar.public_id },
-        {
-            where: {
-                id
-            }
-        }
-    );
+    await User.update({ avatar: avatar.secure_url, avatarPublicId: avatar.public_id }, { where: { id } });
 
-    const user = await User.scope({ method: ['yourProfile'] }).findByPk(id, {
-        raw: true
-    });
+    const user = await User.scope({ method: ['yourProfile'] }).findByPk(id, { raw: true });
 
     return ctx.created({ user });
 };
@@ -161,11 +147,11 @@ const remove = async ctx => {
 };
 
 module.exports = {
+    login,
+    create,
+    remove,
     findAll,
     findOne,
-    create,
-    login,
     uploadAvatar,
-    changeProfileCategory,
-    remove
+    changeProfileCategory
 };

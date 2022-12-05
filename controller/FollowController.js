@@ -30,10 +30,7 @@ const getUserFollowings = async ctx => {
 
     const { rows: users, count: total } = await User.scope({
         method: ['followings', followerId, userId]
-    }).findAndCountAll({
-        offset,
-        limit
-    });
+    }).findAndCountAll({ offset, limit });
 
     return ctx.ok({
         users,
@@ -54,10 +51,7 @@ const create = async ctx => {
     }
 
     const isFollowed = await Follow.findOne({
-        where: {
-            followerId: userId,
-            followingId: profileId
-        },
+        where: { followerId: userId, followingId: profileId },
         raw: true
     });
 
@@ -72,11 +66,7 @@ const create = async ctx => {
     const user = await User.findByPk(profileId, { raw: true });
 
     if (user.profileCategory === 'private') {
-        await Follow.create({
-            followerId: userId,
-            followingId: profileId,
-            status: FollowStatus.PENDING
-        });
+        await Follow.create({ followerId: userId, followingId: profileId, status: FollowStatus.PENDING });
 
         return ctx.created({
             message: `Your request sent user with id: ${profileId}`
@@ -117,10 +107,7 @@ const declineFollowInvitation = async ctx => {
     const followingId = ctx.state.user.id;
     const { followerId } = ctx.params;
 
-    const isFollowed = await Follow.findOne({
-        where: { followingId, followerId },
-        raw: true
-    });
+    const isFollowed = await Follow.findOne({ where: { followingId, followerId }, raw: true });
 
     if (!isFollowed) {
         return ctx.badRequest(ErrorMessages.FOLLOW_REQUEST_CANCEL);
@@ -157,12 +144,7 @@ const remove = async ctx => {
         return ctx.badRequest(ErrorMessages.FOLLOW_PERMISSION);
     }
 
-    const isFollowed = await Follow.findOne({
-        where: {
-            followerId: userId,
-            followingId: profileId
-        }
-    });
+    const isFollowed = await Follow.findOne({ where: { followerId: userId, followingId: profileId } });
 
     if (!isFollowed) {
         return ctx.notFound(ErrorMessages.NO_FOLLOW + ` ${profileId}`);
@@ -176,11 +158,11 @@ const remove = async ctx => {
 };
 
 module.exports = {
+    remove,
+    create,
     getUserFollowers,
     getUserFollowings,
-    create,
-    acceptFollowInvitation,
-    declineFollowInvitation,
     cancelFollowInvitation,
-    remove
+    acceptFollowInvitation,
+    declineFollowInvitation
 };

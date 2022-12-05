@@ -16,10 +16,7 @@ const main = async ctx => {
 
     const { rows: posts, count: total } = await Post.scope({
         method: ['mainPosts', followedUsers]
-    }).findAndCountAll({
-        offset,
-        limit
-    });
+    }).findAndCountAll({ offset, limit });
 
     ctx.body = {
         posts,
@@ -36,10 +33,7 @@ const findAll = async ctx => {
 
     const { rows: posts, count: total } = await Post.scope({
         method: ['allPosts']
-    }).findAndCountAll({
-        offset,
-        limit
-    });
+    }).findAndCountAll({ offset, limit });
 
     return ctx.ok({
         posts,
@@ -65,11 +59,7 @@ const findOne = async ctx => {
 
     if (post.user.profileCategory === 'private') {
         const allowedPost = await Follow.findOne({
-            where: {
-                followerId: userId,
-                followingId: post.user.id,
-                status: 'approved'
-            }
+            where: { followerId: userId, followingId: post.user.id, status: 'approved' }
         });
 
         if (!allowedPost) {
@@ -88,11 +78,7 @@ const getUserPosts = async ctx => {
 
     if (user.profileCategory === 'private') {
         const allowedPosts = await Follow.findOne({
-            where: {
-                followerId: userId,
-                followingId: profileId,
-                status: 'approved'
-            }
+            where: { followerId: userId, followingId: profileId, status: 'approved' }
         });
 
         if (!allowedPosts) {
@@ -104,10 +90,7 @@ const getUserPosts = async ctx => {
 
     const { rows: posts, count: total } = await Post.scope({
         method: ['userAllPosts', profileId]
-    }).findAndCountAll({
-        limit,
-        offset
-    });
+    }).findAndCountAll({ limit, offset });
 
     return ctx.ok({
         posts,
@@ -304,10 +287,10 @@ const remove = async ctx => {
 
 module.exports = {
     main,
-    findAll,
-    findOne,
-    getUserPosts,
     create,
     update,
-    remove
+    remove,
+    findAll,
+    findOne,
+    getUserPosts
 };
