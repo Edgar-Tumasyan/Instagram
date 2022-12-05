@@ -62,7 +62,7 @@ class Notification extends Model {
                     'type'
                 ],
                 where: { receiverId },
-                group: ['id', 'type'],
+                group: ['id'],
                 order: [['createdAt', 'DESC']]
             };
         });
