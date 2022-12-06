@@ -20,7 +20,9 @@ const findAll = async ctx => {
         notification.lastname = user.lastname;
     }
 
-    const total = await Notification.count({ where: { receiverId } });
+    const [data] = await Notification.scope({ method: ['count', receiverId] }).findAll({ raw: true });
+
+    const total = data.count;
 
     return (ctx.body = {
         notifications,
