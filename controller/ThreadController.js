@@ -1,4 +1,4 @@
-const { Follow, Thread, ThreadRequest, ThreadUser } = require('../data/models');
+const { Follow, Thread, ThreadRequest, ThreadUser, sequelize } = require('../data/models');
 const ErrorMessages = require('../constants/ErrorMessages');
 
 const findAll = async ctx => {
@@ -21,9 +21,7 @@ const create = async ctx => {
         return ctx.badRequest(ErrorMessages.NO_CREATE_THREAD);
     }
 
-    const existingThread = await ThreadRequest.scope({ method: ['existingThread', userId, profileId] }).findOne({
-        raw: true
-    });
+    const existingThread = await ThreadRequest.scope({ method: ['existingThread', userId, profileId] }).findOne({ raw: true });
 
     if (existingThread) {
         const thread = await Thread.findByPk(existingThread.threadId, { raw: true });
@@ -31,22 +29,33 @@ const create = async ctx => {
         return ctx.ok({ thread });
     }
 
-    const thread = await Thread.create();
+    await sequelize.transaction(async t => {
+        const thread = await Thread.create({}, { transaction: t });
 
-    await ThreadUser.bulkCreate([
-        { threadId: thread.id, userId },
-        { threadId: thread.id, userId: profileId }
-    ]);
+        await ThreadUser.bulkCreate(
+            [
+                { threadId: thread.id, userId },
+                { threadId: thread.id, userId: profileId }
+            ],
+            { transaction: t }
+        );
 
-    const isFollowed = await Follow.findOne({ where: { followerId: userId, followingId: profileId } });
+        const isFollowed = await Follow.findOne({ where: { followerId: userId, followingId: profileId } });
 
-    if (!isFollowed) {
-        await ThreadRequest.create({ senderId: userId, receiverId: profileId, status: 'pending', threadId: thread.id });
-    } else {
-        await ThreadRequest.create({ senderId: userId, receiverId: profileId, status: 'accepted', threadId: thread.id });
-    }
+        if (!isFollowed) {
+            await ThreadRequest.create(
+                { senderId: userId, receiverId: profileId, status: 'pending', threadId: thread.id },
+                { transaction: t }
+            );
+        } else {
+            await ThreadRequest.create(
+                { senderId: userId, receiverId: profileId, status: 'accepted', threadId: thread.id },
+                { transaction: t }
+            );
+        }
 
-    return ctx.created({ thread });
+        return ctx.created({ thread });
+    });
 };
 
 module.exports = { findAll, create };

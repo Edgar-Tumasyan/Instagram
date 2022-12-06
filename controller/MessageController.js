@@ -1,4 +1,4 @@
-const { Follow, Message, Thread, ThreadRequest, ThreadUser } = require('../data/models');
+const { Follow, Message, Thread, ThreadRequest, ThreadUser, sequelize } = require('../data/models');
 const ErrorMessages = require('../constants/ErrorMessages');
 const { Op } = require('sequelize');
 
@@ -28,19 +28,22 @@ const create = async ctx => {
 
     const text = ctx.request.body;
 
-    const message = await Message.create({ text, userId, threadId }, { raw: true });
+    await sequelize.transaction(async t => {
+        const message = await Message.create({ text, userId, threadId }, { raw: true, transaction: t });
 
-    await Thread.update({ lastMessageId: message.id }, { where: { id: message.threadId } });
+        await Thread.update({ lastMessageId: message.id }, { where: { id: message.threadId }, transaction: t });
 
-    const receiverIds = await ThreadUser.findAll({
-        attributes: ['userId'],
-        where: { threadId, userId: { [Op.ne]: userId } },
-        raw: true
+        const receiverIds = await ThreadUser.findAll({
+            attributes: ['userId'],
+            where: { threadId, userId: { [Op.ne]: userId } },
+            raw: true,
+            transaction: t
+        });
+
+        receiverIds.forEach(receiverId => global.io.to(receiverId.userId).emit('message', { data: message }));
+
+        return ctx.created({ message });
     });
-
-    receiverIds.forEach(receiverId => global.io.to(receiverId.userId).emit('message', { data: message }));
-
-    return ctx.created({ message });
 };
 
 module.exports = { create };

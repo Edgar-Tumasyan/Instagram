@@ -1,4 +1,4 @@
-const { Post, Like, User, Follow, Notification } = require('../data/models');
+const { Post, Like, User, Follow, Notification, sequelize } = require('../data/models');
 const ErrorMessages = require('../constants/ErrorMessages');
 const { NotificationType } = require('../data/lcp');
 
@@ -49,9 +49,14 @@ const create = async ctx => {
         }
     }
 
-    await Like.create({ userId, postId });
+    await sequelize.transaction(async t => {
+        await Like.create({ userId, postId }, { transaction: t });
 
-    await Notification.create({ type: NotificationType.POST_LIKE, senderId: userId, receiverId: post.user.id, postId });
+        await Notification.create(
+            { type: NotificationType.POST_LIKE, senderId: userId, receiverId: post.user.id, postId },
+            { transaction: t }
+        );
+    });
 
     const data = await Post.scope({ method: ['singlePost'] }).findByPk(postId);
 

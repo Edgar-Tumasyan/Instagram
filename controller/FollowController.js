@@ -126,8 +126,7 @@ const cancelFollowInvitation = async ctx => {
 
     if (!isFollowed) {
         return ctx.badRequest({
-            message: `You don,t sent follow invitation user with id: ${followingId} 
-      or user cancel your follow invitation`
+            message: `You don,t sent follow invitation user with id: ${followingId} or user cancel your follow invitation`
         });
     }
 
