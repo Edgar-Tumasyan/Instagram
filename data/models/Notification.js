@@ -76,14 +76,3 @@ class Notification extends Model {
 }
 
 module.exports = Notification;
-
-//             [
-//                 literal(`CASE type WHEN 'postLike' THEN (SELECT firstname FROM "user" WHERE id =
-//                                (SELECT "senderId" FROM notification WHERE "postId" =
-//                                (SELECT id FROM post WHERE id = "Notification"."postId") AND
-//                                "createdAt" = (SELECT MAX("createdAt") FROM notification WHERE "postId" =
-//                                "Notification"."postId")))
-//                              ELSE (SELECT firstname FROM "user" WHERE id = "Notification"."senderId") END`),
-//                 'firstname'
-//             ],
-//

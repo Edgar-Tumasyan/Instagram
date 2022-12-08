@@ -122,12 +122,7 @@ class User extends Model {
                     ]
                 ],
                 where: {
-                    id: {
-                        [Op.in]: models.Follow.generateNestedQuery({
-                            attributes: ['followerId'],
-                            where: { followingId }
-                        })
-                    }
+                    id: { [Op.in]: models.Follow.generateNestedQuery({ attributes: ['followerId'], where: { followingId } }) }
                 }
             };
         });
@@ -153,12 +148,7 @@ class User extends Model {
                     ]
                 ],
                 where: {
-                    id: {
-                        [Op.in]: models.Follow.generateNestedQuery({
-                            attributes: ['followingId'],
-                            where: { followerId }
-                        })
-                    }
+                    id: { [Op.in]: models.Follow.generateNestedQuery({ attributes: ['followingId'], where: { followerId } }) }
                 }
             };
         });
@@ -185,10 +175,7 @@ class User extends Model {
                 ],
                 where: {
                     id: {
-                        [Op.in]: models.Like.generateNestedQuery({
-                            attributes: ['userId'],
-                            where: { postId }
-                        })
+                        [Op.in]: models.Like.generateNestedQuery({ attributes: ['userId'], where: { postId } })
                     }
                 }
             };
