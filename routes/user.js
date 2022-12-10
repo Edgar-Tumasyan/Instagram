@@ -1,11 +1,11 @@
 const Router = require('koa-router');
 
 const UserController = require('../controller/UserController');
-const auth = require('../middleware/auth');
+const { auth, authtorizePermissions } = require('../middleware');
 
 const router = new Router({ prefix: '/users' });
 
-router.get('/', auth, UserController.findAll);
+router.get('/', auth, authtorizePermissions, UserController.findAll);
 router.get('/:id', auth, UserController.findOne);
 
 router.post('/', UserController.create);
