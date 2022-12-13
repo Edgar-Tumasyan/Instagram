@@ -5,21 +5,22 @@ const { NotificationType } = require('../data/lcp');
 const postLikesUsers = async ctx => {
     const { limit, offset } = ctx.state.paginate;
 
-    const postId = ctx.request.params.postId;
-    const userId = ctx.state.user.id;
+    const { postId } = ctx.request.params;
+    const { id: userId } = ctx.state.user;
 
-    const { rows: users, count: total } = await User.scope({
-        method: ['likesUsers', postId, userId]
-    }).findAndCountAll({ limit, offset });
+    const { rows: users, count: total } = await User.scope({ method: ['likesUsers', postId, userId] }).findAndCountAll({
+        limit,
+        offset
+    });
 
-    ctx.body = {
+    return ctx.ok({
         users,
         _meta: {
             total,
             currentPage: Math.ceil((offset + 1) / limit) || 1,
             pageCount: Math.ceil(total / limit)
         }
-    };
+    });
 };
 
 const create = async ctx => {
