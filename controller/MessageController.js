@@ -4,7 +4,7 @@ const { Op } = require('sequelize');
 
 const create = async ctx => {
     const { threadId, profileId } = ctx.params;
-    const userId = ctx.state.user.id;
+    const { id: userId } = ctx.state.user;
 
     const threadUser = await ThreadUser.findOne({ where: { threadId, userId }, raw: true });
 

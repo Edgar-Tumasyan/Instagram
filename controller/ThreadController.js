@@ -2,7 +2,7 @@ const { Follow, Thread, ThreadRequest, ThreadUser, sequelize } = require('../dat
 const ErrorMessages = require('../constants/ErrorMessages');
 
 const findAll = async ctx => {
-    const userId = ctx.state.user.id;
+    const { id: userId } = ctx.state.user;
 
     const data = await ThreadUser.scope({ method: ['threads', userId] }).findAll({ raw: true });
 
@@ -10,12 +10,12 @@ const findAll = async ctx => {
 
     const threads = await Thread.scope({ method: ['allThreads', threadIds] }).findAll();
 
-    ctx.body = { threads };
+    return ctx.ok({ threads });
 };
 
 const create = async ctx => {
     const { profileId } = ctx.params;
-    const userId = ctx.state.user.id;
+    const { id: userId } = ctx.state.user;
 
     if (userId === profileId) {
         return ctx.badRequest(ErrorMessages.NO_CREATE_THREAD);

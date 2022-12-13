@@ -2,7 +2,7 @@ const { Notification, User } = require('../data/models');
 const { Op } = require('sequelize');
 
 const findAll = async ctx => {
-    const receiverId = ctx.state.user.id;
+    const { id: receiverId } = ctx.state.user;
     const { limit, offset } = ctx.state.paginate;
 
     const notifications = await Notification.scope({ method: ['allNotifications', receiverId] }).findAll({ raw: true });
