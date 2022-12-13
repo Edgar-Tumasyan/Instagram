@@ -30,9 +30,7 @@ const findOne = async ctx => {
     const profileId = ctx.request.params.id;
     const userId = ctx.state.user.id;
 
-    const user = await User.scope({
-        method: ['profile', profileId, userId]
-    }).findByPk(profileId);
+    const user = await User.scope({ method: ['profile', profileId, userId] }).findByPk(profileId);
 
     if (!user) {
         return ctx.notFound(ErrorMessages.NO_USER + ` ${profileId}`);
@@ -56,12 +54,7 @@ const create = async ctx => {
 
     const hashPassword = await bcrypt.hash(password, 10);
 
-    const newUser = await User.create({
-        firstname,
-        lastname,
-        email,
-        password: hashPassword
-    });
+    const newUser = await User.create({ firstname, lastname, email, password: hashPassword });
 
     return ctx.created({ user: newUser });
 };
@@ -103,7 +96,7 @@ const uploadAvatar = async ctx => {
 
     const avatar = await Cloudinary.upload(reqAvatar.path, 'avatars');
 
-    const id = ctx.state.user.id;
+    const { id } = ctx.state.user;
 
     await User.update({ avatar: avatar.secure_url, avatarPublicId: avatar.public_id }, { where: { id } });
 
@@ -113,7 +106,7 @@ const uploadAvatar = async ctx => {
 };
 
 const changeProfileCategory = async ctx => {
-    const id = ctx.state.user.id;
+    const { id } = ctx.state.user;
 
     const { profileCategory } = ctx.request.body;
 
