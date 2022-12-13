@@ -177,7 +177,7 @@ const update = async ctx => {
         return ctx.notFound(ErrorMessages.NO_POST + `${postId}`);
     }
 
-    const userId = ctx.state.user.id;
+    const { id: userId } = ctx.state.user;
 
     if (post.user.id !== userId) {
         return ctx.unauthorized(ErrorMessages.POST_UPDATE_PERMISSION);
@@ -212,12 +212,7 @@ const update = async ctx => {
                     const attachmentUrl = attachment.secure_url;
                     const attachmentPublicId = attachment.public_id;
 
-                    newAttachments.push({
-                        postId,
-                        userId,
-                        attachmentUrl,
-                        attachmentPublicId
-                    });
+                    newAttachments.push({ postId, userId, attachmentUrl, attachmentPublicId });
                 }
 
                 await Attachment.bulkCreate(newAttachments, { transaction: t });
@@ -232,16 +227,12 @@ const update = async ctx => {
         }
 
         if (deleteAttachments) {
-            if (_.isArray(deleteAttachments)) {
-                for (const attachment of deleteAttachments) {
-                    await Cloudinary.delete(attachment);
+            const attachments = deleteAttachments.split(', ');
 
-                    await Attachment.destroy({ where: { attachmentPublicId: attachment } }, { transaction: t });
-                }
-            } else {
-                await Cloudinary.delete(deleteAttachments);
+            for (const attachment of attachments) {
+                await Cloudinary.delete(attachment);
 
-                await Attachment.destroy({ where: { attachmentPublicId: deleteAttachments } }, { transaction: t });
+                await Attachment.destroy({ where: { attachmentPublicId: attachment } }, { transaction: t });
             }
         }
     });
