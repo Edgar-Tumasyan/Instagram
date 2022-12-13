@@ -76,7 +76,7 @@ const login = async ctx => {
         expiresIn: config.EXPIRES_IN
     });
 
-    ctx.ok({ user, token });
+    return ctx.ok({ user, token });
 };
 
 const uploadAvatar = async ctx => {
@@ -118,11 +118,11 @@ const changeProfileCategory = async ctx => {
 
     const user = await User.findByPk(id);
 
-    ctx.body = { user };
+    return ctx.ok({ user });
 };
 
 const remove = async ctx => {
-    const id = ctx.state.user.id;
+    const { id } = ctx.state.user;
 
     const user = await User.findByPk(id);
 
@@ -136,7 +136,7 @@ const remove = async ctx => {
 
     await User.destroy({ where: { id } });
 
-    ctx.noContent();
+    return ctx.noContent();
 };
 
 module.exports = {
