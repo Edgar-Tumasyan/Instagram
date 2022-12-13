@@ -5,12 +5,13 @@ const ErrorMessages = require('../constants/ErrorMessages');
 const getUserFollowers = async ctx => {
     const { limit, offset } = ctx.state.paginate;
 
-    const followingId = ctx.request.params.profileId;
-    const userId = ctx.state.user.id;
+    const { profileId: followingId } = ctx.request.params;
+    const { id: userId } = ctx.state.user;
 
-    const { rows: users, count: total } = await User.scope({
-        method: ['followers', followingId, userId]
-    }).findAndCountAll({ offset, limit });
+    const { rows: users, count: total } = await User.scope({ method: ['followers', followingId, userId] }).findAndCountAll({
+        offset,
+        limit
+    });
 
     return ctx.ok({
         users,
@@ -25,12 +26,13 @@ const getUserFollowers = async ctx => {
 const getUserFollowings = async ctx => {
     const { limit, offset } = ctx.state.paginate;
 
-    const followerId = ctx.request.params.profileId;
-    const userId = ctx.state.user.id;
+    const { profileId: followerId } = ctx.request.params;
+    const { id: userId } = ctx.state.user;
 
-    const { rows: users, count: total } = await User.scope({
-        method: ['followings', followerId, userId]
-    }).findAndCountAll({ offset, limit });
+    const { rows: users, count: total } = await User.scope({ method: ['followings', followerId, userId] }).findAndCountAll({
+        offset,
+        limit
+    });
 
     return ctx.ok({
         users,
@@ -44,16 +46,13 @@ const getUserFollowings = async ctx => {
 
 const create = async ctx => {
     const { profileId } = ctx.params;
-    const userId = ctx.state.user.id;
+    const { id: userId } = ctx.state.user;
 
     if (profileId === userId) {
         return ctx.badRequest(ErrorMessages.FOLLOW_ACCESS);
     }
 
-    const isFollowed = await Follow.findOne({
-        where: { followerId: userId, followingId: profileId },
-        raw: true
-    });
+    const isFollowed = await Follow.findOne({ where: { followerId: userId, followingId: profileId }, raw: true });
 
     if (isFollowed && isFollowed.status === 'approved') {
         return ctx.badRequest(ErrorMessages.FOLLOW_APPROVED + ` ${profileId}`);
@@ -68,9 +67,7 @@ const create = async ctx => {
     if (user.profileCategory === 'private') {
         await Follow.create({ followerId: userId, followingId: profileId, status: FollowStatus.PENDING });
 
-        return ctx.created({
-            message: `Your request sent user with id: ${profileId}`
-        });
+        return ctx.created({ message: `Your request sent user with id: ${profileId}` });
     }
 
     const follow = await Follow.create(
@@ -89,7 +86,7 @@ const create = async ctx => {
 };
 
 const acceptFollowInvitation = async ctx => {
-    const followingId = ctx.state.user.id;
+    const { id: followingId } = ctx.state.user;
     const { followerId } = ctx.params;
 
     const isFollowed = await Follow.findOne({ where: { followingId, followerId }, raw: true });
@@ -104,7 +101,7 @@ const acceptFollowInvitation = async ctx => {
 };
 
 const declineFollowInvitation = async ctx => {
-    const followingId = ctx.state.user.id;
+    const { id: followingId } = ctx.state.user;
     const { followerId } = ctx.params;
 
     const isFollowed = await Follow.findOne({ where: { followingId, followerId }, raw: true });
@@ -119,14 +116,14 @@ const declineFollowInvitation = async ctx => {
 };
 
 const cancelFollowInvitation = async ctx => {
-    const followingId = ctx.params.profileId;
-    const followerId = ctx.state.user.id;
+    const { profileId: followingId } = ctx.params;
+    const { id: followerId } = ctx.state.user;
 
     const isFollowed = await Follow.findOne({ where: { followingId, followerId }, raw: true });
 
     if (!isFollowed) {
         return ctx.badRequest({
-            message: `You don,t sent follow invitation user with id: ${followingId} or user cancel your follow invitation`
+            message: `You don't sent follow invitation user with id: ${followingId} or user cancel your follow invitation`
         });
     }
 
@@ -137,7 +134,7 @@ const cancelFollowInvitation = async ctx => {
 
 const remove = async ctx => {
     const { profileId } = ctx.params;
-    const userId = ctx.state.user.id;
+    const { id: userId } = ctx.state.user;
 
     if (profileId === userId) {
         return ctx.badRequest(ErrorMessages.FOLLOW_PERMISSION);
@@ -149,9 +146,7 @@ const remove = async ctx => {
         return ctx.notFound(ErrorMessages.NO_FOLLOW + ` ${profileId}`);
     }
 
-    await Follow.destroy({
-        where: { followerId: userId, followingId: profileId }
-    });
+    await Follow.destroy({ where: { followerId: userId, followingId: profileId } });
 
     return ctx.noContent();
 };
