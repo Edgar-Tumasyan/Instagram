@@ -29,6 +29,8 @@ const create = async ctx => {
         return ctx.ok({ thread });
     }
 
+    const isFollowed = await Follow.findOne({ where: { followerId: userId, followingId: profileId } });
+
     await sequelize.transaction(async t => {
         const thread = await Thread.create({}, { transaction: t });
 
@@ -39,8 +41,6 @@ const create = async ctx => {
             ],
             { transaction: t }
         );
-
-        const isFollowed = await Follow.findOne({ where: { followerId: userId, followingId: profileId } });
 
         if (!isFollowed) {
             await ThreadRequest.create(

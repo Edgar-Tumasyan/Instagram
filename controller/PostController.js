@@ -1,18 +1,13 @@
+const _ = require('lodash');
+
 const { Post, Attachment, User, Follow, sequelize } = require('../data/models');
 const ErrorMessages = require('../constants/ErrorMessages');
 const Cloudinary = require('../components/Cloudinary');
-const _ = require('lodash');
 
 const main = async ctx => {
     const { limit, offset } = ctx.state.paginate;
 
-    const { id: followerId } = ctx.state.user;
-
-    const users = await Follow.scope({ method: ['followedUsers', followerId] }).findAll({ raw: true });
-
-    const followedUsers = users.map(user => user.userId);
-
-    const { rows: posts, count: total } = await Post.scope({ method: ['mainPosts', followedUsers] }).findAndCountAll({
+    const { rows: posts, count: total } = await Post.scope({ method: ['mainPosts'] }).findAndCountAll({
         offset,
         limit
     });
@@ -46,17 +41,17 @@ const findAll = async ctx => {
 const findOne = async ctx => {
     const { id: postId } = ctx.request.params;
 
-    const post = await Post.scope({ method: ['singlePost'] }).findByPk(postId);
+    const { id: followerId } = ctx.state.user;
+
+    const post = await Post.scope({ method: ['singlePost', followerId] }).findByPk(postId);
 
     if (!post) {
         return ctx.notFound(ErrorMessages.NO_POST + ` ${postId}`);
     }
 
-    const { id: userId } = ctx.state.user;
-
-    if (post.user.profileCategory === 'private' && userId !== post.user.id) {
+    if (post.user.profileCategory === 'private' && followerId !== post.user.id) {
         const allowedPost = await Follow.findOne({
-            where: { followerId: userId, followingId: post.user.id, status: 'approved' }
+            where: { followerId, followingId: post.user.id, status: 'approved' }
         });
 
         if (!allowedPost) {
@@ -129,15 +124,11 @@ const create = async ctx => {
 
     const { id: userId } = ctx.state.user;
 
-    const post = await sequelize.transaction(async t => {
+    const postId = await sequelize.transaction(async t => {
         const newPost = await Post.create({ description, title, userId }, { transaction: t });
 
-        const postId = newPost.id;
-
         if (!reqAttachments) {
-            return await Post.scope({ method: ['expand'] }).findByPk(postId, {
-                transaction: t
-            });
+            return newPost.id;
         }
 
         if (_.isArray(reqAttachments)) {
@@ -149,7 +140,7 @@ const create = async ctx => {
                 const attachmentUrl = attachment.secure_url;
                 const attachmentPublicId = attachment.public_id;
 
-                attachments.push({ postId, userId, attachmentUrl, attachmentPublicId });
+                attachments.push({ postId: newPost.id, userId, attachmentUrl, attachmentPublicId });
             }
 
             await Attachment.bulkCreate(attachments, { transaction: t });
@@ -159,11 +150,13 @@ const create = async ctx => {
             const attachmentUrl = attachment.secure_url;
             const attachmentPublicId = attachment.public_id;
 
-            await Attachment.create({ postId, userId, attachmentUrl, attachmentPublicId }, { transaction: t });
+            await Attachment.create({ postId: newPost.id, userId, attachmentUrl, attachmentPublicId }, { transaction: t });
         }
 
-        return await Post.scope({ method: ['expand'] }).findByPk(postId, { transaction: t });
+        return newPost.id;
     });
+
+    const post = await Post.scope({ method: ['expand'] }).findByPk(postId);
 
     return ctx.created({ post });
 };
@@ -239,7 +232,7 @@ const update = async ctx => {
 
     const data = await Post.scope({ method: ['expand'] }).findByPk(postId);
 
-    return ctx.created({ post: data });
+    return ctx.ok({ post: data });
 };
 
 const remove = async ctx => {

@@ -1,6 +1,7 @@
 const { DataTypes, Model, literal } = require('sequelize');
-const { FollowStatus } = require('../lcp');
 const _ = require('lodash');
+
+const { FollowStatus } = require('../lcp');
 
 class Follow extends Model {
     static init(sequelize) {

@@ -1,6 +1,7 @@
 const { DataTypes, Model, literal, Op } = require('sequelize');
-const { ThreadType } = require('../lcp');
 const _ = require('lodash');
+
+const { ThreadType } = require('../lcp');
 
 class Thread extends Model {
     static init(sequelize) {

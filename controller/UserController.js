@@ -1,20 +1,18 @@
-const ErrorMessages = require('../constants/ErrorMessages');
-const Cloudinary = require('../components/Cloudinary');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const _ = require('lodash');
 
+const ErrorMessages = require('../constants/ErrorMessages');
+const Cloudinary = require('../components/Cloudinary');
 const { User } = require('../data/models');
 const config = require('../config');
 
 const findAll = async ctx => {
-    const userId = ctx.state.user.id;
+    const { id: userId } = ctx.state.user;
 
     const { limit, offset } = ctx.state.paginate;
 
-    const { rows: users, count: total } = await User.scope({
-        method: ['profiles', userId]
-    }).findAndCountAll({ offset, limit });
+    const { rows: users, count: total } = await User.scope({ method: ['profiles', userId] }).findAndCountAll({ offset, limit });
 
     return ctx.ok({
         users,
@@ -27,8 +25,8 @@ const findAll = async ctx => {
 };
 
 const findOne = async ctx => {
-    const profileId = ctx.request.params.id;
-    const userId = ctx.state.user.id;
+    const { id: profileId } = ctx.request.params;
+    const { id: userId } = ctx.state.user;
 
     const user = await User.scope({ method: ['profile', profileId, userId] }).findByPk(profileId);
 
@@ -40,6 +38,10 @@ const findOne = async ctx => {
 };
 
 const create = async ctx => {
+    if (!ctx.request.body) {
+        return ctx.badRequest(ErrorMessages.MISSING_VALUES);
+    }
+
     const { firstname, lastname, email, password } = ctx.request.body;
 
     if (!firstname || !lastname || !email || !password) {

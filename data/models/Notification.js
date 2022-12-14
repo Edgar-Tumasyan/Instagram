@@ -1,6 +1,7 @@
 const { DataTypes, Model, literal } = require('sequelize');
-const { NotificationType } = require('../lcp');
 const _ = require('lodash');
+
+const { NotificationType } = require('../lcp');
 
 class Notification extends Model {
     static init(sequelize) {

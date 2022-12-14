@@ -1,10 +1,8 @@
 const _ = require('lodash');
 
-const { UserRole, ProfileCategory, UserStatus } = require('../lcp');
-
 module.exports = {
     async up(queryInterface, Sequelize) {
-        await queryInterface.createTable('user', {
+        await queryInterface.createTable('admin', {
             id: {
                 type: Sequelize.UUID,
                 defaultValue: Sequelize.UUIDV4,
@@ -20,34 +18,14 @@ module.exports = {
                 validate: { isEmail: true }
             },
             password: { type: Sequelize.STRING, allowNull: false },
-            role: {
-                allowNull: false,
-                type: Sequelize.ENUM,
-                values: _.values(UserRole),
-                defaultValue: UserRole.USER
-            },
-            status: {
-                type: Sequelize.STRING,
-                allowNull: false,
-                values: _.values(UserStatus),
-                defaultValue: UserStatus.Active
-            },
             avatar: { type: Sequelize.DataTypes.STRING },
             avatarPublicId: { type: Sequelize.DataTypes.STRING },
-            profileCategory: {
-                type: Sequelize.DataTypes.ENUM,
-                values: _.values(ProfileCategory),
-                defaultValue: ProfileCategory.PUBLIC
-            },
+
             createdAt: { allowNull: false, type: Sequelize.DATE },
             updatedAt: { allowNull: false, type: Sequelize.DATE }
         });
     },
     async down(queryInterface) {
-        await queryInterface.dropTable('user');
-
-        await queryInterface.sequelize.query('drop type "enum_user_role";');
-
-        await queryInterface.sequelize.query('drop type "enum_user_profileCategory";');
+        await queryInterface.dropTable('admin');
     }
 };

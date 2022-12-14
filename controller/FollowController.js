@@ -49,7 +49,7 @@ const create = async ctx => {
     const { id: userId } = ctx.state.user;
 
     if (profileId === userId) {
-        return ctx.badRequest(ErrorMessages.FOLLOW_ACCESS);
+        return ctx.badRequest(ErrorMessages.FOLLOW_PERMISSION);
     }
 
     const isFollowed = await Follow.findOne({ where: { followerId: userId, followingId: profileId }, raw: true });

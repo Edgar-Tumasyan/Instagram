@@ -84,7 +84,7 @@ class Post extends Model {
             };
         });
 
-        Post.addScope('singlePost', () => {
+        Post.addScope('singlePost', followerId => {
             return {
                 attributes: [
                     'id',
@@ -94,7 +94,27 @@ class Post extends Model {
                     [literal(`(SELECT COUNT('*') FROM attachment WHERE "postId" = "Post"."id")::int`), 'attachmentsCount']
                 ],
                 include: [
-                    { attributes: ['id', 'firstname', 'lastname', 'profileCategory'], model: models.User, as: 'user' },
+                    {
+                        attributes: [
+                            'id',
+                            'firstname',
+                            'lastname',
+                            'profileCategory',
+                            [
+                                literal(
+                                    `(SELECT CASE (SELECT COALESCE((SELECT status FROM follow WHERE "followerId" =
+                                    '${followerId}' AND "followingId" = "Post"."userId"), NULL ))
+                                   WHEN 'pending' THEN 'pending'
+                                   WHEN 'approved' THEN 'approved'
+                                   ELSE 'unfollow'
+                                   END as status)`
+                                ),
+                                'followStatus'
+                            ]
+                        ],
+                        model: models.User,
+                        as: 'user'
+                    },
                     {
                         attributes: ['id', 'attachmentUrl', 'attachmentPublicId'],
                         model: models.Attachment,
@@ -122,7 +142,12 @@ class Post extends Model {
             };
         });
 
-        Post.addScope('mainPosts', followedUsers => {
+        Post.addScope('mainPosts', () => {
+            const followedUsers = [
+                literal(`(SELECT id FROM "user" WHERE id in (Select "followingId" from follow where
+                        "followerId" = 'abb87d8a-d35b-44c4-b94e-a9db4f92a292'))`)
+            ];
+
             return {
                 attributes: [
                     'id',

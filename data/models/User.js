@@ -1,6 +1,7 @@
 const { DataTypes, Model, literal, Op } = require('sequelize');
-const { UserRole, ProfileCategory } = require('../lcp');
 const _ = require('lodash');
+
+const { UserRole, ProfileCategory, UserStatus } = require('../lcp');
 
 class User extends Model {
     static init(sequelize) {
@@ -25,6 +26,12 @@ class User extends Model {
                     type: DataTypes.ENUM,
                     values: _.values(UserRole),
                     defaultValue: UserRole.USER
+                },
+                status: {
+                    type: DataTypes.STRING,
+                    allowNull: false,
+                    values: _.values(UserStatus),
+                    defaultValue: UserStatus.Active
                 },
                 profileCategory: {
                     type: DataTypes.ENUM,
@@ -60,6 +67,7 @@ class User extends Model {
                     'firstname',
                     'lastname',
                     'avatar',
+                    'status',
                     [literal(`(SELECT COUNT('*') FROM post WHERE "userId" = "User"."id")::int`), 'postsCount'],
                     [literal(`(SELECT COUNT('*') FROM follow WHERE "followingId" = "User"."id")::int`), 'followersCount'],
                     [literal(`(SELECT COUNT('*') FROM follow WHERE "followerId" = "User"."id")::int`), 'followingsCount'],
@@ -85,6 +93,7 @@ class User extends Model {
                     'firstname',
                     'lastname',
                     'avatar',
+                    'status',
                     [
                         literal(
                             `(SELECT CASE (SELECT COALESCE((SELECT status FROM follow WHERE "followerId" =
@@ -109,6 +118,7 @@ class User extends Model {
                     'lastname',
                     'avatar',
                     'profileCategory',
+                    'status',
                     [
                         literal(
                             `(SELECT CASE (SELECT COALESCE((SELECT status FROM follow WHERE "followerId" =
@@ -135,6 +145,7 @@ class User extends Model {
                     'lastname',
                     'avatar',
                     'profileCategory',
+                    'status',
                     [
                         literal(
                             `(SELECT CASE (SELECT COALESCE((SELECT status FROM follow WHERE "followerId" =
@@ -161,6 +172,7 @@ class User extends Model {
                     'lastname',
                     'avatar',
                     'profileCategory',
+                    'status',
                     [
                         literal(
                             `(SELECT CASE (SELECT COALESCE((SELECT status FROM follow WHERE "followerId" =
@@ -188,12 +200,38 @@ class User extends Model {
                     'firstname',
                     'lastname',
                     'avatar',
+                    'status',
                     [literal(`(SELECT COUNT('*') FROM post WHERE "userId" = "User"."id")::int`), 'postsCount'],
                     [literal(`(SELECT COUNT('*') FROM follow WHERE "followingId" = "User"."id")::int`), 'followersCount'],
                     [literal(`(SELECT COUNT('*') FROM follow WHERE "followerId" = "User"."id")::int`), 'followingsCount']
                 ]
             };
         });
+
+        User.addScope('usersForAdmin', (q, sortField, sortType, status) => {
+            return {
+                attributes: [
+                    'id',
+                    'firstname',
+                    'lastname',
+                    'avatar',
+                    'status',
+                    [literal(`(SELECT COUNT('*') FROM post WHERE "userId" = "User"."id")::int`), 'postsCount'],
+                    [literal(`(SELECT COUNT('*') FROM follow WHERE "followingId" = "User"."id")::int`), 'followersCount'],
+                    [literal(`(SELECT COUNT('*') FROM follow WHERE "followerId" = "User"."id")::int`), 'followingsCount']
+                ],
+                where: { status, [Op.or]: [{ firstname: { [Op.like]: `%${q}%` } }, { lastname: { [Op.like]: `%${q}%` } }] },
+                order: [[`${sortField}`, `${sortType}`]]
+            };
+        });
+    }
+
+    toJSON() {
+        const user = this.get();
+
+        const hiddenFields = ['password'];
+
+        return _.omit(user, hiddenFields);
     }
 }
 

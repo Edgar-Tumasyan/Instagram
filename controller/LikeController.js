@@ -26,13 +26,13 @@ const postLikesUsers = async ctx => {
 const create = async ctx => {
     const { postId } = ctx.params;
 
-    const post = await Post.scope({ method: ['singlePost'] }).findByPk(postId);
+    const { id: userId } = ctx.state.user;
+
+    const post = await Post.scope({ method: ['singlePost', userId] }).findByPk(postId);
 
     if (!post) {
         return ctx.badRequest(ErrorMessages.NO_POST + ` ${postId}`);
     }
-
-    const userId = ctx.state.user.id;
 
     const existingLike = await Like.findOne({ where: { postId, userId } });
 
@@ -59,7 +59,7 @@ const create = async ctx => {
         );
     });
 
-    const data = await Post.scope({ method: ['singlePost'] }).findByPk(postId);
+    const data = await Post.scope({ method: ['singlePost', userId] }).findByPk(postId);
 
     return ctx.created({ post: data });
 };
