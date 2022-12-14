@@ -22,4 +22,20 @@ const findAll = async ctx => {
     });
 };
 
-module.exports = { findAll };
+const deactivateUser = async ctx => {
+    const { id } = ctx.params;
+
+    await User.update({ status: 'inactive' }, { where: { id } });
+
+    return ctx.noContent();
+};
+
+const activateUser = async ctx => {
+    const { id } = ctx.params;
+
+    await User.update({ status: 'active' }, { where: { id } });
+
+    return ctx.noContent();
+};
+
+module.exports = { findAll, deactivateUser, activateUser };

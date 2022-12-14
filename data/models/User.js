@@ -28,7 +28,7 @@ class User extends Model {
                     defaultValue: UserRole.USER
                 },
                 status: {
-                    type: DataTypes.STRING,
+                    type: DataTypes.ENUM,
                     allowNull: false,
                     values: _.values(UserStatus),
                     defaultValue: UserStatus.Active

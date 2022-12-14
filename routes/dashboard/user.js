@@ -7,4 +7,8 @@ const router = new Router({ prefix: '/users' });
 
 router.get('/', auth, authtorizePermissions, UserController.findAll);
 
+router.post('/:id', auth, authtorizePermissions, UserController.activateUser);
+
+router.delete('/:id', auth, authtorizePermissions, UserController.deactivateUser);
+
 module.exports = router;

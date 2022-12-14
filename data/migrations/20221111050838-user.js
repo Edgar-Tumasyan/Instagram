@@ -27,7 +27,7 @@ module.exports = {
                 defaultValue: UserRole.USER
             },
             status: {
-                type: Sequelize.STRING,
+                type: Sequelize.ENUM,
                 allowNull: false,
                 values: _.values(UserStatus),
                 defaultValue: UserStatus.Active
