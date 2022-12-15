@@ -73,7 +73,7 @@ const remove = async ctx => {
         return ctx.badRequest(ErrorMessages.NO_POST + ` ${postId}`);
     }
 
-    const userId = ctx.state.user.id;
+    const { id: userId } = ctx.state.user;
 
     const existingLike = await Like.findOne({ where: { postId, userId } });
 
