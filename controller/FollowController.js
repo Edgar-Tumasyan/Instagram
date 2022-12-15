@@ -1,5 +1,5 @@
 const { FollowStatus, NotificationType } = require('../data/lcp');
-const { Follow, User, Notification } = require('../data/models');
+const { Follow, User, Notification, sequelize } = require('../data/models');
 const ErrorMessages = require('../constants/ErrorMessages');
 
 const getUserFollowers = async ctx => {
@@ -65,24 +65,44 @@ const create = async ctx => {
     const user = await User.findByPk(profileId, { raw: true });
 
     if (user.profileCategory === 'private') {
-        await Follow.create({ followerId: userId, followingId: profileId, status: FollowStatus.PENDING });
+        await sequelize.transaction(async t => {
+            const followRequest = await Follow.create(
+                { followerId: userId, followingId: profileId, status: FollowStatus.PENDING },
+                { transaction: t }
+            );
+
+            await Notification.create(
+                {
+                    type: NotificationType.USER_FOLLOW,
+                    senderId: userId,
+                    receiverId: profileId,
+                    followId: followRequest.id
+                },
+                { transaction: t }
+            );
+        });
 
         return ctx.created({ message: `Your request sent user with id: ${profileId}` });
     }
 
-    const follow = await Follow.create(
-        { followerId: userId, followingId: profileId, status: FollowStatus.APPROVED },
-        { raw: true }
-    );
+    await sequelize.transaction(async t => {
+        const follow = await Follow.create(
+            { followerId: userId, followingId: profileId, status: FollowStatus.APPROVED },
+            { raw: true, transaction: t }
+        );
 
-    await Notification.create({
-        type: NotificationType.USER_FOLLOW,
-        senderId: userId,
-        receiverId: profileId,
-        followId: follow.id
+        await Notification.create(
+            {
+                type: NotificationType.USER_FOLLOW,
+                senderId: userId,
+                receiverId: profileId,
+                followId: follow.id
+            },
+            { transaction: t }
+        );
+
+        return ctx.created({ message: `You follow user with id: ${profileId}` });
     });
-
-    return ctx.created({ message: `You follow user with id: ${profileId}` });
 };
 
 const acceptFollowInvitation = async ctx => {
@@ -91,8 +111,8 @@ const acceptFollowInvitation = async ctx => {
 
     const isFollowed = await Follow.findOne({ where: { followingId, followerId }, raw: true });
 
-    if (!isFollowed) {
-        return ctx.badRequest(ErrorMessages.FOLLOW_REQUEST_CANCEL);
+    if (!isFollowed || isFollowed.status === 'approved') {
+        return ctx.badRequest(ErrorMessages.FOLLOW_REQUEST);
     }
 
     await Follow.update({ status: FollowStatus.APPROVED }, { where: { followerId, followingId } });
@@ -107,7 +127,7 @@ const declineFollowInvitation = async ctx => {
     const isFollowed = await Follow.findOne({ where: { followingId, followerId }, raw: true });
 
     if (!isFollowed) {
-        return ctx.badRequest(ErrorMessages.FOLLOW_REQUEST_CANCEL);
+        return ctx.badRequest(ErrorMessages.FOLLOW_REQUEST);
     }
 
     await Follow.destroy({ where: { followerId, followingId } });

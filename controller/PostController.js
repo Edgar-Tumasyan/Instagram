@@ -246,8 +246,6 @@ const remove = async ctx => {
 
     const { id: userId } = ctx.state.user;
 
-    console.log(post.userId, userId);
-
     if (post.userId !== userId) {
         return ctx.unauthorized(ErrorMessages.POST_DELETE_PERMISSION);
     }

@@ -12,9 +12,9 @@ module.exports = {
     EXISTING_PENDING_REQUEST: 'You already send your first message, please wait user confirmation',
 
     FOLLOW_APPROVED: 'You already follow user with id',
-    FOLLOW_REQUEST_CANCEL: 'User cancel follow request',
     FOLLOW_PERMISSION: `You can't follow or unfollow your account`,
     FOLLOW_PENDING: 'You have already sent request to follow user with id',
+    FOLLOW_REQUEST: 'User cancel follow invitation or you already accepted it',
     FOLLOW_INVITATION_CANCEL: `You don't sent follow invitation or user cancel your follow invitation`,
 
     INVALID_CREDENTIALS: 'Invalid Credentials',
