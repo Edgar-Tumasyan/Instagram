@@ -1,7 +1,10 @@
-const { DataTypes, Model, literal, Op } = require('sequelize');
 const _ = require('lodash');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const { DataTypes, Model, literal, Op } = require('sequelize');
 
 const { UserRole, ProfileCategory, UserStatus } = require('../lcp');
+const config = require('../../config');
 
 class User extends Model {
     static init(sequelize) {
@@ -13,15 +16,27 @@ class User extends Model {
                     primaryKey: true,
                     allowNull: false
                 },
-                firstname: { type: DataTypes.STRING, allowNull: false },
-                lastname: { type: DataTypes.STRING, allowNull: false },
+                firstname: {
+                    type: DataTypes.STRING,
+                    allowNull: false,
+                    validate: { len: { args: [3, 12] } }
+                },
+                lastname: {
+                    type: DataTypes.STRING,
+                    allowNull: false,
+                    validate: { len: { args: [3, 12] } }
+                },
                 email: {
                     type: DataTypes.STRING,
                     allowNull: false,
                     unique: true,
                     validate: { isEmail: true }
                 },
-                password: { type: DataTypes.STRING, allowNull: false },
+                password: {
+                    type: DataTypes.STRING,
+                    allowNull: false,
+                    validate: { len: { args: [6, 14] } }
+                },
                 role: {
                     type: DataTypes.ENUM,
                     values: _.values(UserRole),
@@ -41,10 +56,17 @@ class User extends Model {
                 avatar: DataTypes.STRING,
                 avatarPublicId: DataTypes.STRING
             },
+
             {
                 sequelize,
                 timestamps: true,
-                tableName: 'user'
+                tableName: 'user',
+
+                hooks: {
+                    beforeCreate: async user => {
+                        user.password = await bcrypt.hash(user.password, 10);
+                    }
+                }
             }
         );
     }
@@ -57,6 +79,12 @@ class User extends Model {
         User.hasMany(models.Follow, { as: 'followings', foreignKey: 'followingId' });
 
         User.hasMany(models.Attachment, { as: 'attachments', foreignKey: 'userId' });
+    }
+
+    generateToken() {
+        const { id, email, role } = this;
+
+        return jwt.sign({ id, email, role }, config.JWT_SECRET, { expiresIn: config.EXPIRES_IN });
     }
 
     static addScopes(models) {

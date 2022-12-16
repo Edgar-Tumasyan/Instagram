@@ -1,12 +1,12 @@
+const ErrorMessages = require('../constants/ErrorMessages');
 const { FollowStatus, NotificationType } = require('../data/lcp');
 const { Follow, User, Notification, sequelize } = require('../data/models');
-const ErrorMessages = require('../constants/ErrorMessages');
 
 const getUserFollowers = async ctx => {
     const { limit, offset } = ctx.state.paginate;
 
-    const { profileId: followingId } = ctx.request.params;
     const { id: userId } = ctx.state.user;
+    const { profileId: followingId } = ctx.request.params;
 
     const { rows: users, count: total } = await User.scope({ method: ['followers', followingId, userId] }).findAndCountAll({
         offset,
@@ -17,8 +17,8 @@ const getUserFollowers = async ctx => {
         users,
         _meta: {
             total,
-            currentPage: Math.ceil((offset + 1) / limit) || 1,
-            pageCount: Math.ceil(total / limit)
+            pageCount: Math.ceil(total / limit),
+            currentPage: Math.ceil((offset + 1) / limit) || 1
         }
     });
 };
@@ -26,8 +26,8 @@ const getUserFollowers = async ctx => {
 const getUserFollowings = async ctx => {
     const { limit, offset } = ctx.state.paginate;
 
-    const { profileId: followerId } = ctx.request.params;
     const { id: userId } = ctx.state.user;
+    const { profileId: followerId } = ctx.request.params;
 
     const { rows: users, count: total } = await User.scope({ method: ['followings', followerId, userId] }).findAndCountAll({
         offset,
@@ -38,8 +38,8 @@ const getUserFollowings = async ctx => {
         users,
         _meta: {
             total,
-            currentPage: Math.ceil((offset + 1) / limit) || 1,
-            pageCount: Math.ceil(total / limit)
+            pageCount: Math.ceil(total / limit),
+            currentPage: Math.ceil((offset + 1) / limit) || 1
         }
     });
 };
@@ -72,12 +72,7 @@ const create = async ctx => {
             );
 
             await Notification.create(
-                {
-                    type: NotificationType.USER_FOLLOW,
-                    senderId: userId,
-                    receiverId: profileId,
-                    followId: followRequest.id
-                },
+                { senderId: userId, receiverId: profileId, followId: followRequest.id, type: NotificationType.USER_FOLLOW },
                 { transaction: t }
             );
         });
@@ -92,12 +87,7 @@ const create = async ctx => {
         );
 
         await Notification.create(
-            {
-                type: NotificationType.USER_FOLLOW,
-                senderId: userId,
-                receiverId: profileId,
-                followId: follow.id
-            },
+            { senderId: userId, receiverId: profileId, followId: follow.id, type: NotificationType.USER_FOLLOW },
             { transaction: t }
         );
 
@@ -106,8 +96,8 @@ const create = async ctx => {
 };
 
 const acceptFollowInvitation = async ctx => {
-    const { id: followingId } = ctx.state.user;
     const { followerId } = ctx.params;
+    const { id: followingId } = ctx.state.user;
 
     const isFollowed = await Follow.findOne({ where: { followingId, followerId }, raw: true });
 
@@ -121,8 +111,8 @@ const acceptFollowInvitation = async ctx => {
 };
 
 const declineFollowInvitation = async ctx => {
-    const { id: followingId } = ctx.state.user;
     const { followerId } = ctx.params;
+    const { id: followingId } = ctx.state.user;
 
     const isFollowed = await Follow.findOne({ where: { followingId, followerId }, raw: true });
 
@@ -136,8 +126,8 @@ const declineFollowInvitation = async ctx => {
 };
 
 const cancelFollowInvitation = async ctx => {
-    const { profileId: followingId } = ctx.params;
     const { id: followerId } = ctx.state.user;
+    const { profileId: followingId } = ctx.params;
 
     const isFollowed = await Follow.findOne({ where: { followingId, followerId }, raw: true });
 

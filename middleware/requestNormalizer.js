@@ -3,6 +3,7 @@ const fileType = require('file-type');
 const compose = require('koa-compose');
 const readChunk = require('read-chunk');
 const { koaBody } = require('koa-body');
+const randomString = require('randomstring');
 
 async function normalizeFile(file) {
     const buffer = readChunk.sync(file.filepath, 0, 4100);
@@ -10,7 +11,7 @@ async function normalizeFile(file) {
     const fileInfo = await fileType.fromBuffer(buffer);
 
     return {
-        key: `${_.get(fileInfo, 'ext')}`,
+        key: `${randomString.generate()}.${_.get(fileInfo, 'ext')}`,
         type: _.head(_.split(_.get(fileInfo, 'mime'), '/')),
         size: _.toString(_.get(file, 'size')),
         mime: _.get(fileInfo, 'mime'),
@@ -35,6 +36,10 @@ async function normalizer(ctx, next) {
                 ctx.request.files[key] = await normalizeFile(value);
             }
         }
+    }
+
+    if (!ctx.request.body) {
+        ctx.request.body = {};
     }
 
     await next();

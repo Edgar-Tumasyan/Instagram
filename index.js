@@ -5,13 +5,13 @@ const io = new Server(server, { cors: { origin: '*' } });
 
 const config = require('./config');
 const v1Routes = require('./routes');
+const socket = require('./services/socket');
 const dashboardRoutes = require('./routes/dashboard');
-const socket = require('./service/socket');
 
 const port = config.PORT || 3000;
 
-app.use(require('./middleware/requestNormalizer')());
 app.use(require('./middleware/restify')());
+app.use(require('./middleware/requestNormalizer')());
 
 app.use(v1Routes.routes());
 app.use(dashboardRoutes.routes());

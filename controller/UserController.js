@@ -1,11 +1,10 @@
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
 const _ = require('lodash');
+const bcrypt = require('bcrypt');
 
-const ErrorMessages = require('../constants/ErrorMessages');
-const Cloudinary = require('../components/Cloudinary');
 const { User } = require('../data/models');
-const config = require('../config');
+const avatarType = require('../constants/imageType');
+const Cloudinary = require('../components/Cloudinary');
+const ErrorMessages = require('../constants/ErrorMessages');
 
 const findAll = async ctx => {
     const { id: userId } = ctx.state.user;
@@ -18,15 +17,15 @@ const findAll = async ctx => {
         users,
         _meta: {
             total,
-            currentPage: Math.ceil((offset + 1) / limit) || 1,
-            pageCount: Math.ceil(total / limit)
+            pageCount: Math.ceil(total / limit),
+            currentPage: Math.ceil((offset + 1) / limit) || 1
         }
     });
 };
 
 const findOne = async ctx => {
-    const { id: profileId } = ctx.request.params;
     const { id: userId } = ctx.state.user;
+    const { id: profileId } = ctx.request.params;
 
     const user = await User.scope({ method: ['profile', profileId, userId] }).findByPk(profileId);
 
@@ -38,25 +37,9 @@ const findOne = async ctx => {
 };
 
 const create = async ctx => {
-    if (!ctx.request.body) {
-        return ctx.badRequest(ErrorMessages.MISSING_VALUES);
-    }
-
     const { firstname, lastname, email, password } = ctx.request.body;
 
-    if (!firstname || !lastname || !email || !password) {
-        return ctx.badRequest(ErrorMessages.MISSING_VALUES);
-    }
-
-    const existingEmail = await User.findOne({ where: { email } });
-
-    if (existingEmail) {
-        return ctx.badRequest(ErrorMessages.EXISTING_EMAIL);
-    }
-
-    const hashPassword = await bcrypt.hash(password, 10);
-
-    const newUser = await User.create({ firstname, lastname, email, password: hashPassword });
+    const newUser = await User.create({ firstname, lastname, email, password });
 
     return ctx.created({ user: newUser });
 };
@@ -74,11 +57,7 @@ const login = async ctx => {
         return ctx.notFound(ErrorMessages.INVALID_CREDENTIALS);
     }
 
-    const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, config.JWT_SECRET, {
-        expiresIn: config.EXPIRES_IN
-    });
-
-    return ctx.ok({ user, token });
+    return ctx.ok({ user, token: user.generateToken() });
 };
 
 const uploadAvatar = async ctx => {
@@ -92,7 +71,7 @@ const uploadAvatar = async ctx => {
         return ctx.badRequest(ErrorMessages.MANY_AVATARS);
     }
 
-    if (reqAvatar.type !== 'image') {
+    if (!avatarType.includes(reqAvatar.ext)) {
         return ctx.badRequest(ErrorMessages.AVATAR_TYPE);
     }
 
@@ -126,7 +105,7 @@ const changeProfileCategory = async ctx => {
 const remove = async ctx => {
     const { id } = ctx.state.user;
 
-    const user = await User.findByPk(id);
+    const user = await User.findByPk(id, { raw: true });
 
     if (!user) {
         return ctx.notFound(ErrorMessages.NO_USER + ` ${id}`);

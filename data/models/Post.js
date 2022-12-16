@@ -142,10 +142,10 @@ class Post extends Model {
             };
         });
 
-        Post.addScope('mainPosts', () => {
+        Post.addScope('mainPosts', userId => {
             const followedUsers = [
                 literal(`(SELECT id FROM "user" WHERE id in (Select "followingId" from follow where
-                        "followerId" = 'abb87d8a-d35b-44c4-b94e-a9db4f92a292'))`)
+                        "followerId" = '${userId}'))`)
             ];
 
             return {

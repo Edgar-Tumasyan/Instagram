@@ -1,8 +1,10 @@
-const { Notification, User } = require('../data/models');
 const { Op } = require('sequelize');
+
+const { Notification, User } = require('../data/models');
 
 const findAll = async ctx => {
     const { id: receiverId } = ctx.state.user;
+
     const { limit, offset } = ctx.state.paginate;
 
     const notifications = await Notification.scope({ method: ['allNotifications', receiverId] }).findAll({ raw: true });
@@ -28,8 +30,8 @@ const findAll = async ctx => {
         notifications,
         _meta: {
             total,
-            currentPage: Math.ceil((offset + 1) / limit) || 1,
-            pageCount: Math.ceil(total / limit)
+            pageCount: Math.ceil(total / limit),
+            currentPage: Math.ceil((offset + 1) / limit) || 1
         }
     });
 };

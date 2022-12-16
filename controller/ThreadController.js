@@ -1,16 +1,24 @@
-const { Follow, Thread, ThreadRequest, ThreadUser, sequelize } = require('../data/models');
 const ErrorMessages = require('../constants/ErrorMessages');
+const { Follow, Thread, ThreadRequest, ThreadUser, sequelize } = require('../data/models');
 
 const findAll = async ctx => {
     const { id: userId } = ctx.state.user;
 
-    const data = await ThreadUser.scope({ method: ['threads', userId] }).findAll({ raw: true });
+    const { limit, offset } = ctx.state.paginate;
 
-    const threadIds = data.map(thread => thread.threadId);
+    const { rows: threads, count: total } = await Thread.scope({ method: ['allThreads', userId] }).findAndCountAll({
+        offset,
+        limit
+    });
 
-    const threads = await Thread.scope({ method: ['allThreads', threadIds] }).findAll();
-
-    return ctx.ok({ threads });
+    return ctx.ok({
+        threads,
+        _meta: {
+            total,
+            pageCount: Math.ceil(total / limit),
+            currentPage: Math.ceil((offset + 1) / limit) || 1
+        }
+    });
 };
 
 const create = async ctx => {
@@ -34,22 +42,24 @@ const create = async ctx => {
     await sequelize.transaction(async t => {
         const thread = await Thread.create({}, { transaction: t });
 
+        const threadId = thread.id;
+
         await ThreadUser.bulkCreate(
             [
-                { threadId: thread.id, userId },
-                { threadId: thread.id, userId: profileId }
+                { threadId, userId },
+                { threadId, userId: profileId }
             ],
             { transaction: t }
         );
 
         if (!isFollowed) {
             await ThreadRequest.create(
-                { senderId: userId, receiverId: profileId, status: 'pending', threadId: thread.id },
+                { senderId: userId, receiverId: profileId, status: 'pending', threadId },
                 { transaction: t }
             );
         } else {
             await ThreadRequest.create(
-                { senderId: userId, receiverId: profileId, status: 'accepted', threadId: thread.id },
+                { senderId: userId, receiverId: profileId, status: 'accepted', threadId },
                 { transaction: t }
             );
         }

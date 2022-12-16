@@ -1,13 +1,17 @@
 const _ = require('lodash');
 
-const { Post, Attachment, User, Follow, sequelize } = require('../data/models');
-const ErrorMessages = require('../constants/ErrorMessages');
 const Cloudinary = require('../components/Cloudinary');
+const attachmentType = require('../constants/imageType');
+const ErrorMessages = require('../constants/ErrorMessages');
+
+const { Post, Attachment, User, Follow, sequelize } = require('../data/models');
 
 const main = async ctx => {
+    const { id: userId } = ctx.state.user;
+
     const { limit, offset } = ctx.state.paginate;
 
-    const { rows: posts, count: total } = await Post.scope({ method: ['mainPosts'] }).findAndCountAll({
+    const { rows: posts, count: total } = await Post.scope({ method: ['mainPosts', userId] }).findAndCountAll({
         offset,
         limit
     });
@@ -16,8 +20,8 @@ const main = async ctx => {
         posts,
         _meta: {
             total,
-            currentPage: Math.ceil((offset + 1) / limit) || 1,
-            pageCount: Math.ceil(total / limit)
+            pageCount: Math.ceil(total / limit),
+            currentPage: Math.ceil((offset + 1) / limit) || 1
         }
     });
 };
@@ -40,7 +44,6 @@ const findAll = async ctx => {
 
 const findOne = async ctx => {
     const { id: postId } = ctx.request.params;
-
     const { id: followerId } = ctx.state.user;
 
     const post = await Post.scope({ method: ['singlePost', followerId] }).findByPk(postId);
@@ -50,9 +53,7 @@ const findOne = async ctx => {
     }
 
     if (post.user.profileCategory === 'private' && followerId !== post.user.id) {
-        const allowedPost = await Follow.findOne({
-            where: { followerId, followingId: post.user.id, status: 'approved' }
-        });
+        const allowedPost = await Follow.findOne({ where: { followerId, followingId: post.user.id, status: 'approved' } });
 
         if (!allowedPost) {
             return ctx.forbidden(ErrorMessages.ALLOWED_POST);
@@ -63,15 +64,13 @@ const findOne = async ctx => {
 };
 
 const getUserPosts = async ctx => {
-    const { profileId } = ctx.request.params;
     const { id: userId } = ctx.state.user;
+    const { profileId } = ctx.request.params;
 
     const user = await User.findByPk(profileId, { raw: true });
 
     if (user.profileCategory === 'private' && profileId !== userId) {
-        const allowedPosts = await Follow.findOne({
-            where: { followerId: userId, followingId: profileId, status: 'approved' }
-        });
+        const allowedPosts = await Follow.findOne({ where: { followerId: userId, followingId: profileId, status: 'approved' } });
 
         if (!allowedPosts) {
             return ctx.forbidden(ErrorMessages.ALLOWED_POST);
@@ -89,34 +88,26 @@ const getUserPosts = async ctx => {
         posts,
         _meta: {
             total,
-            currentPage: Math.ceil((offset + 1) / limit) || 1,
-            pageCount: Math.ceil(total / limit)
+            pageCount: Math.ceil(total / limit),
+            currentPage: Math.ceil((offset + 1) / limit) || 1
         }
     });
 };
 
 const create = async ctx => {
-    if (!ctx.request.body) {
-        return ctx.badRequest(ErrorMessages.POST_VALUES);
-    }
-
     const { description, title } = ctx.request.body;
-
-    if (!description || !title) {
-        return ctx.badRequest(ErrorMessages.POST_VALUES);
-    }
 
     const reqAttachments = ctx.request.files?.attachments;
 
     if (reqAttachments) {
         if (_.isArray(reqAttachments)) {
             for (const attachment of reqAttachments) {
-                if (attachment.type !== 'image') {
+                if (!attachmentType.includes(attachment.ext)) {
                     return ctx.badRequest(ErrorMessages.ATTACHMENT_TYPE);
                 }
             }
         } else {
-            if (reqAttachments.type !== 'image') {
+            if (!attachmentType.includes(reqAttachments.ext)) {
                 return ctx.badRequest(ErrorMessages.ATTACHMENT_TYPE);
             }
         }
@@ -177,12 +168,11 @@ const update = async ctx => {
     }
 
     const attachments = ctx.request.files?.attachments;
+    const { description, title, deleteAttachments } = ctx.request.body;
 
-    if (!attachments && !ctx.request.body) {
+    if (!description && !title && !deleteAttachments && !attachments) {
         return ctx.badRequest(ErrorMessages.UPDATED_VALUES);
     }
-
-    const { description, title, deleteAttachments } = ctx.request.body;
 
     await sequelize.transaction(async t => {
         if (title) {

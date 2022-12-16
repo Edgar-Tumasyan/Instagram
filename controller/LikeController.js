@@ -1,6 +1,6 @@
-const { Post, Like, User, Follow, Notification, sequelize } = require('../data/models');
-const ErrorMessages = require('../constants/ErrorMessages');
 const { NotificationType } = require('../data/lcp');
+const ErrorMessages = require('../constants/ErrorMessages');
+const { Post, Like, User, Follow, Notification, sequelize } = require('../data/models');
 
 const postLikesUsers = async ctx => {
     const { limit, offset } = ctx.state.paginate;
@@ -17,15 +17,14 @@ const postLikesUsers = async ctx => {
         users,
         _meta: {
             total,
-            currentPage: Math.ceil((offset + 1) / limit) || 1,
-            pageCount: Math.ceil(total / limit)
+            pageCount: Math.ceil(total / limit),
+            currentPage: Math.ceil((offset + 1) / limit) || 1
         }
     });
 };
 
 const create = async ctx => {
     const { postId } = ctx.params;
-
     const { id: userId } = ctx.state.user;
 
     const post = await Post.scope({ method: ['singlePost', userId] }).findByPk(postId);

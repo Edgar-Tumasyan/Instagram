@@ -11,15 +11,27 @@ module.exports = {
                 primaryKey: true,
                 allowNull: false
             },
-            firstname: { type: Sequelize.STRING, allowNull: false },
-            lastname: { type: Sequelize.STRING, allowNull: false },
+            firstname: {
+                type: Sequelize.STRING,
+                allowNull: false,
+                validate: { len: { args: [3, 12] } }
+            },
+            lastname: {
+                type: Sequelize.STRING,
+                allowNull: false,
+                validate: { len: { args: [3, 12] } }
+            },
             email: {
                 type: Sequelize.STRING,
                 allowNull: false,
                 unique: true,
                 validate: { isEmail: true }
             },
-            password: { type: Sequelize.STRING, allowNull: false },
+            password: {
+                type: Sequelize.STRING,
+                allowNull: false,
+                validate: { len: { args: [6, 14] } }
+            },
             role: {
                 allowNull: false,
                 type: Sequelize.ENUM,
@@ -45,6 +57,8 @@ module.exports = {
     },
     async down(queryInterface) {
         await queryInterface.dropTable('user');
+
+        await queryInterface.sequelize.query('drop type "enum_user_status";');
 
         await queryInterface.sequelize.query('drop type "enum_user_role";');
 

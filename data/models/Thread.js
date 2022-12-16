@@ -35,7 +35,9 @@ class Thread extends Model {
     }
 
     static addScopes() {
-        Thread.addScope('allThreads', threadIds => {
+        Thread.addScope('allThreads', userId => {
+            const threadIds = [literal(`(SELECT "threadId" FROM "threadUser" WHERE "threadUser"."userId" = '${userId}')`)];
+
             return {
                 attributes: [
                     'id',
