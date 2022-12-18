@@ -1,5 +1,5 @@
-const { DataTypes, Model, literal } = require('sequelize');
 const _ = require('lodash');
+const { DataTypes, Model, literal } = require('sequelize');
 
 const { NotificationType } = require('../lcp');
 
@@ -7,21 +7,12 @@ class Notification extends Model {
     static init(sequelize) {
         return super.init(
             {
-                id: {
-                    type: DataTypes.UUID,
-                    defaultValue: DataTypes.UUIDV4,
-                    primaryKey: true,
-                    allowNull: false
-                },
+                id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true, allowNull: false },
                 type: { type: DataTypes.ENUM, values: _.values(NotificationType), allowNull: false },
                 isSeen: { type: DataTypes.BOOLEAN, defaultValue: false },
                 isRead: { type: DataTypes.BOOLEAN, defaultValue: false }
             },
-            {
-                sequelize,
-                timestamps: true,
-                tableName: 'notification'
-            }
+            { sequelize, timestamps: true, tableName: 'notification' }
         );
     }
 

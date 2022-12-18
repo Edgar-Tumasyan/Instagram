@@ -1,7 +1,7 @@
 const Router = require('koa-router');
 
-const LikeController = require('../controller/LikeController');
-const auth = require('../middleware/auth');
+const auth = require('../middlewares/auth');
+const LikeController = require('../controllers/LikeController');
 
 const router = new Router({ prefix: '/posts/:postId/likes' });
 

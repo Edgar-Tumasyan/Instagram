@@ -3,7 +3,6 @@ const _ = require('lodash');
 const Cloudinary = require('../components/Cloudinary');
 const attachmentType = require('../constants/imageType');
 const ErrorMessages = require('../constants/ErrorMessages');
-
 const { Post, Attachment, User, Follow, sequelize } = require('../data/models');
 
 const main = async ctx => {
@@ -97,17 +96,13 @@ const getUserPosts = async ctx => {
 const create = async ctx => {
     const { description, title } = ctx.request.body;
 
-    const reqAttachments = ctx.request.files?.attachments;
+    const postAttachments = _.isArray(ctx.request.files?.attachments)
+        ? ctx.request.files.attachments
+        : [ctx.request.files?.attachments];
 
-    if (reqAttachments) {
-        if (_.isArray(reqAttachments)) {
-            for (const attachment of reqAttachments) {
-                if (!attachmentType.includes(attachment.ext)) {
-                    return ctx.badRequest(ErrorMessages.ATTACHMENT_TYPE);
-                }
-            }
-        } else {
-            if (!attachmentType.includes(reqAttachments.ext)) {
+    if (!_.isUndefined(...postAttachments)) {
+        for (const attachment of postAttachments) {
+            if (!attachmentType.includes(attachment.ext)) {
                 return ctx.badRequest(ErrorMessages.ATTACHMENT_TYPE);
             }
         }
@@ -118,31 +113,22 @@ const create = async ctx => {
     const postId = await sequelize.transaction(async t => {
         const newPost = await Post.create({ description, title, userId }, { transaction: t });
 
-        if (!reqAttachments) {
+        if (_.isUndefined(...postAttachments)) {
             return newPost.id;
         }
 
-        if (_.isArray(reqAttachments)) {
-            const attachments = [];
+        const attachments = [];
 
-            for (const file of reqAttachments) {
-                const attachment = await Cloudinary.upload(file.path, 'attachments');
-
-                const attachmentUrl = attachment.secure_url;
-                const attachmentPublicId = attachment.public_id;
-
-                attachments.push({ postId: newPost.id, userId, attachmentUrl, attachmentPublicId });
-            }
-
-            await Attachment.bulkCreate(attachments, { transaction: t });
-        } else {
-            const attachment = await Cloudinary.upload(reqAttachments.path, 'attachments');
+        for (const file of postAttachments) {
+            const attachment = await Cloudinary.upload(file, 'attachments');
 
             const attachmentUrl = attachment.secure_url;
             const attachmentPublicId = attachment.public_id;
 
-            await Attachment.create({ postId: newPost.id, userId, attachmentUrl, attachmentPublicId }, { transaction: t });
+            attachments.push({ postId: newPost.id, userId, attachmentUrl, attachmentPublicId });
         }
+
+        await Attachment.bulkCreate(attachments, { transaction: t });
 
         return newPost.id;
     });
@@ -167,11 +153,22 @@ const update = async ctx => {
         return ctx.unauthorized(ErrorMessages.POST_UPDATE_PERMISSION);
     }
 
-    const attachments = ctx.request.files?.attachments;
     const { description, title, deleteAttachments } = ctx.request.body;
 
-    if (!description && !title && !deleteAttachments && !attachments) {
+    const newAttachments = _.isArray(ctx.request.files?.attachments)
+        ? ctx.request.files.attachments
+        : [ctx.request.files?.attachments];
+
+    if (!description && !title && !deleteAttachments && _.isUndefined(...newAttachments)) {
         return ctx.badRequest(ErrorMessages.UPDATED_VALUES);
+    }
+
+    if (!_.isUndefined(...newAttachments)) {
+        for (const attachment of newAttachments) {
+            if (!attachmentType.includes(attachment.ext)) {
+                return ctx.badRequest(ErrorMessages.ATTACHMENT_TYPE);
+            }
+        }
     }
 
     await sequelize.transaction(async t => {
@@ -185,28 +182,19 @@ const update = async ctx => {
 
         await post.save({ transaction: t });
 
-        if (attachments) {
-            if (_.isArray(attachments)) {
-                const newAttachments = [];
+        if (!_.isUndefined(...newAttachments)) {
+            const attachments = [];
 
-                for (const file of attachments) {
-                    const attachment = await Cloudinary.upload(file.path, 'attachments');
-
-                    const attachmentUrl = attachment.secure_url;
-                    const attachmentPublicId = attachment.public_id;
-
-                    newAttachments.push({ postId, userId, attachmentUrl, attachmentPublicId });
-                }
-
-                await Attachment.bulkCreate(newAttachments, { transaction: t });
-            } else {
-                const attachment = await Cloudinary.upload(attachments.path, 'attachments');
+            for (const file of newAttachments) {
+                const attachment = await Cloudinary.upload(file, 'attachments');
 
                 const attachmentUrl = attachment.secure_url;
                 const attachmentPublicId = attachment.public_id;
 
-                await Attachment.create({ postId, userId, attachmentUrl, attachmentPublicId }, { transaction: t });
+                attachments.push({ postId, userId, attachmentUrl, attachmentPublicId });
             }
+
+            await Attachment.bulkCreate(attachments, { transaction: t });
         }
 
         if (deleteAttachments) {

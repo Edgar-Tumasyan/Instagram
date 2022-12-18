@@ -1,11 +1,11 @@
 const Router = require('koa-router');
 
-const adminRoutes = require('./admin');
 const userRoutes = require('./user');
+const adminRoutes = require('./admin');
 
 const router = new Router({ prefix: '/dashboard' });
 
-router.use(adminRoutes.routes());
 router.use(userRoutes.routes());
+router.use(adminRoutes.routes());
 
 module.exports = router;

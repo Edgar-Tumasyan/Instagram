@@ -4,8 +4,6 @@ module.exports = {
     ALLOWED_POST: 'Posts of this user can see only followers',
     AUTHORIZE_PERMISSIONS: 'Unauthorized to access this route',
 
-    CORRECT_EMAIL: 'Email must be an email, please provide correct email address',
-
     EXISTING_EMAIL: 'Email already exist',
     EXISTING_LIKE: 'You already like this post',
     EXISTING_DECLINE_REQUEST: 'User decline your request invitation',

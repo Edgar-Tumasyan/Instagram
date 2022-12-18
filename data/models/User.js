@@ -3,51 +3,20 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { DataTypes, Model, literal, Op } = require('sequelize');
 
-const { UserRole, ProfileCategory, UserStatus } = require('../lcp');
 const config = require('../../config');
+const { UserRole, ProfileCategory, UserStatus } = require('../lcp');
 
 class User extends Model {
     static init(sequelize) {
         return super.init(
             {
-                id: {
-                    type: DataTypes.UUID,
-                    defaultValue: DataTypes.UUIDV4,
-                    primaryKey: true,
-                    allowNull: false
-                },
-                firstname: {
-                    type: DataTypes.STRING,
-                    allowNull: false,
-                    validate: { len: { args: [3, 12] } }
-                },
-                lastname: {
-                    type: DataTypes.STRING,
-                    allowNull: false,
-                    validate: { len: { args: [3, 12] } }
-                },
-                email: {
-                    type: DataTypes.STRING,
-                    allowNull: false,
-                    unique: true,
-                    validate: { isEmail: true }
-                },
-                password: {
-                    type: DataTypes.STRING,
-                    allowNull: false,
-                    validate: { len: { args: [6, 14] } }
-                },
-                role: {
-                    type: DataTypes.ENUM,
-                    values: _.values(UserRole),
-                    defaultValue: UserRole.USER
-                },
-                status: {
-                    type: DataTypes.ENUM,
-                    allowNull: false,
-                    values: _.values(UserStatus),
-                    defaultValue: UserStatus.Active
-                },
+                id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true, allowNull: false },
+                firstname: { type: DataTypes.STRING, allowNull: false, validate: { len: { args: [3, 12] } } },
+                lastname: { type: DataTypes.STRING, allowNull: false, validate: { len: { args: [3, 12] } } },
+                email: { type: DataTypes.STRING, allowNull: false, unique: true, validate: { isEmail: true } },
+                password: { type: DataTypes.STRING, allowNull: false, validate: { len: { args: [6, 14] } } },
+                role: { type: DataTypes.ENUM, values: _.values(UserRole), defaultValue: UserRole.USER },
+                status: { type: DataTypes.ENUM, allowNull: false, values: _.values(UserStatus), defaultValue: UserStatus.Active },
                 profileCategory: {
                     type: DataTypes.ENUM,
                     values: _.values(ProfileCategory),

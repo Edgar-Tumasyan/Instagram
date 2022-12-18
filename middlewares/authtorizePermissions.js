@@ -1,6 +1,6 @@
 const ErrorMessages = require('../constants/ErrorMessages');
 
-const authtorizePermissions = async (ctx, next) => {
+const authorizePermissions = async (ctx, next) => {
     const { tokenType: role } = ctx.state.user;
 
     if (!role.includes('admin')) {
@@ -10,4 +10,4 @@ const authtorizePermissions = async (ctx, next) => {
     await next();
 };
 
-module.exports = authtorizePermissions;
+module.exports = authorizePermissions;

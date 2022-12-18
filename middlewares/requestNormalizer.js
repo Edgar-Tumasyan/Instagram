@@ -11,13 +11,13 @@ async function normalizeFile(file) {
     const fileInfo = await fileType.fromBuffer(buffer);
 
     return {
-        key: `${randomString.generate()}.${_.get(fileInfo, 'ext')}`,
-        type: _.head(_.split(_.get(fileInfo, 'mime'), '/')),
-        size: _.toString(_.get(file, 'size')),
-        mime: _.get(fileInfo, 'mime'),
         ext: _.get(fileInfo, 'ext'),
+        mime: _.get(fileInfo, 'mime'),
         path: _.get(file, 'filepath'),
-        name: _.get(file, 'newFilename')
+        name: _.get(file, 'newFilename'),
+        size: _.toString(_.get(file, 'size')),
+        key: `${randomString.generate()}.${_.get(fileInfo, 'ext')}`,
+        type: _.head(_.split(_.get(fileInfo, 'mime'), '/'))
     };
 }
 

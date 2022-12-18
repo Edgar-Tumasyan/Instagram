@@ -4,22 +4,11 @@ class Attachment extends Model {
     static init(sequelize) {
         return super.init(
             {
-                id: {
-                    type: DataTypes.UUID,
-                    defaultValue: DataTypes.UUIDV4,
-                    primaryKey: true,
-                    allowNull: false
-                },
-                postId: { type: DataTypes.UUID, allowNull: false },
-                userId: { type: DataTypes.UUID, allowNull: false },
+                id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true, allowNull: false },
                 attachmentUrl: { type: DataTypes.STRING, allowNull: false },
                 attachmentPublicId: { type: DataTypes.STRING, allowNull: false }
             },
-            {
-                sequelize,
-                timestamps: true,
-                tableName: 'attachment'
-            }
+            { sequelize, timestamps: true, tableName: 'attachment' }
         );
     }
 

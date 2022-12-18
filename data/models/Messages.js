@@ -4,21 +4,10 @@ class Message extends Model {
     static init(sequelize) {
         return super.init(
             {
-                id: {
-                    type: DataTypes.UUID,
-                    defaultValue: DataTypes.UUIDV4,
-                    primaryKey: true,
-                    allowNull: false
-                },
-                text: { type: DataTypes.TEXT, allowNull: false },
-                userId: { type: DataTypes.UUID, allowNull: false },
-                threadId: { type: DataTypes.UUID, allowNull: false }
+                id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true, allowNull: false },
+                text: { type: DataTypes.TEXT, allowNull: false }
             },
-            {
-                sequelize,
-                timestamps: true,
-                tableName: 'message'
-            }
+            { sequelize, timestamps: true, tableName: 'message' }
         );
     }
 

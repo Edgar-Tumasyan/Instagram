@@ -1,4 +1,3 @@
-const { DataTypes } = require('sequelize');
 const _ = require('lodash');
 
 const { ThreadType } = require('../lcp');
@@ -6,17 +5,8 @@ const { ThreadType } = require('../lcp');
 module.exports = {
     async up(queryInterface, Sequelize) {
         await queryInterface.createTable('thread', {
-            id: {
-                type: DataTypes.UUID,
-                defaultValue: DataTypes.UUIDV4,
-                primaryKey: true,
-                allowNull: false
-            },
-            type: {
-                type: DataTypes.ENUM,
-                values: _.values(ThreadType),
-                defaultValue: ThreadType.DIRECT
-            },
+            id: { type: Sequelize.UUID, defaultValue: Sequelize.UUIDV4, primaryKey: true, allowNull: false },
+            type: { type: Sequelize.ENUM, values: _.values(ThreadType), defaultValue: ThreadType.DIRECT },
             createdAt: { allowNull: false, type: Sequelize.DATE },
             updatedAt: { allowNull: false, type: Sequelize.DATE }
         });

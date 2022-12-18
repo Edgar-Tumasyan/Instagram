@@ -75,7 +75,7 @@ const uploadAvatar = async ctx => {
         return ctx.badRequest(ErrorMessages.AVATAR_TYPE);
     }
 
-    const avatar = await Cloudinary.upload(reqAvatar.path, 'avatars');
+    const avatar = await Cloudinary.upload(reqAvatar, 'avatars');
 
     const { id } = ctx.state.user;
 

@@ -1,5 +1,5 @@
-const { DataTypes, Model, literal, Op } = require('sequelize');
 const _ = require('lodash');
+const { DataTypes, Model, literal, Op } = require('sequelize');
 
 const { ThreadType } = require('../lcp');
 
@@ -7,24 +7,11 @@ class Thread extends Model {
     static init(sequelize) {
         return super.init(
             {
-                id: {
-                    type: DataTypes.UUID,
-                    defaultValue: DataTypes.UUIDV4,
-                    primaryKey: true,
-                    allowNull: false
-                },
-                type: {
-                    type: DataTypes.ENUM,
-                    values: _.values(ThreadType),
-                    defaultValue: ThreadType.DIRECT
-                },
+                id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true, allowNull: false },
+                type: { type: DataTypes.ENUM, values: _.values(ThreadType), defaultValue: ThreadType.DIRECT },
                 lastMessageId: { type: DataTypes.UUID }
             },
-            {
-                sequelize,
-                timestamps: true,
-                tableName: 'thread'
-            }
+            { sequelize, timestamps: true, tableName: 'thread' }
         );
     }
 

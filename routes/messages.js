@@ -1,7 +1,7 @@
 const Router = require('koa-router');
 
-const MessageController = require('../controller/MessageController');
-const auth = require('../middleware/auth');
+const auth = require('../middlewares/auth');
+const MessageController = require('../controllers/MessageController');
 
 const router = new Router({ prefix: '/messages' });
 

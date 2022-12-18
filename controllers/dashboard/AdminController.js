@@ -6,19 +6,11 @@ const { Admin } = require('../../data/models');
 const config = require('../../config');
 
 const create = async ctx => {
-    if (!ctx.request.body) {
-        return ctx.badRequest(ErrorMessages.MISSING_VALUES);
-    }
-
     const { firstname, lastname, email, password } = ctx.request.body;
 
-    if (!firstname || !lastname || !email || !password) {
-        return ctx.badRequest(ErrorMessages.MISSING_VALUES);
-    }
+    // const hashPassword = await bcrypt.hash(password, 10);
 
-    const hashPassword = await bcrypt.hash(password, 10);
-
-    const newAdmin = await Admin.create({ firstname, lastname, email, password: hashPassword });
+    const newAdmin = await Admin.create({ firstname, lastname, email, password });
 
     return ctx.created({ admin: newAdmin });
 };

@@ -4,20 +4,9 @@ class ThreadUser extends Model {
     static init(sequelize) {
         return super.init(
             {
-                id: {
-                    type: DataTypes.UUID,
-                    defaultValue: DataTypes.UUIDV4,
-                    primaryKey: true,
-                    allowNull: false
-                },
-                threadId: { type: DataTypes.UUID, allowNull: false },
-                userId: { type: DataTypes.UUID, allowNull: false }
+                id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true, allowNull: false }
             },
-            {
-                sequelize,
-                timestamps: true,
-                tableName: 'threadUser'
-            }
+            { sequelize, timestamps: true, tableName: 'threadUser' }
         );
     }
 

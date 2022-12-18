@@ -10,8 +10,8 @@ const dashboardRoutes = require('./routes/dashboard');
 
 const port = config.PORT || 3000;
 
-app.use(require('./middleware/restify')());
-app.use(require('./middleware/requestNormalizer')());
+app.use(require('./middlewares/restify')());
+app.use(require('./middlewares/requestNormalizer')());
 
 app.use(v1Routes.routes());
 app.use(dashboardRoutes.routes());

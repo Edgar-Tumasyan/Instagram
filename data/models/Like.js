@@ -3,21 +3,8 @@ const { DataTypes, Model } = require('sequelize');
 class Like extends Model {
     static init(sequelize) {
         return super.init(
-            {
-                id: {
-                    type: DataTypes.UUID,
-                    defaultValue: DataTypes.UUIDV4,
-                    primaryKey: true,
-                    allowNull: false
-                },
-                userId: { type: DataTypes.UUID, allowNull: false },
-                postId: { type: DataTypes.UUID, allowNull: false }
-            },
-            {
-                sequelize,
-                timestamps: true,
-                tableName: 'like'
-            }
+            { id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true, allowNull: false } },
+            { sequelize, timestamps: true, tableName: 'like' }
         );
     }
 

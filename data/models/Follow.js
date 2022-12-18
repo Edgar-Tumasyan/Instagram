@@ -1,5 +1,5 @@
-const { DataTypes, Model, literal } = require('sequelize');
 const _ = require('lodash');
+const { DataTypes, Model, literal } = require('sequelize');
 
 const { FollowStatus } = require('../lcp');
 
@@ -7,25 +7,10 @@ class Follow extends Model {
     static init(sequelize) {
         return super.init(
             {
-                id: {
-                    type: DataTypes.UUID,
-                    defaultValue: DataTypes.UUIDV4,
-                    primaryKey: true,
-                    allowNull: false
-                },
-                followerId: { type: DataTypes.UUID, allowNull: false },
-                followingId: { type: DataTypes.UUID, allowNull: false },
-                status: {
-                    type: DataTypes.ENUM,
-                    values: _.values(FollowStatus),
-                    defaultValue: FollowStatus.APPROVED
-                }
+                id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true, allowNull: false },
+                status: { type: DataTypes.ENUM, values: _.values(FollowStatus), defaultValue: FollowStatus.APPROVED }
             },
-            {
-                sequelize,
-                timestamps: true,
-                tableName: 'follow'
-            }
+            { sequelize, timestamps: true, tableName: 'follow' }
         );
     }
 

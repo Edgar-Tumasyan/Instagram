@@ -1,6 +1,6 @@
 const Router = require('koa-router');
 
-const AdminController = require('../../controller/dashboard/AdminController');
+const AdminController = require('../../controllers/dashboard/AdminController');
 
 const router = new Router({ prefix: '/admin' });
 

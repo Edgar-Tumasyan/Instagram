@@ -39,14 +39,6 @@ module.exports = () => async (ctx, next) => {
             return ctx.unprocessable_entity(ErrorMessages.UNPROCESSABLE_ENTITY);
         }
 
-        if (err.errors[0].message === 'Validation isEmail on email failed') {
-            return ctx.badRequest(ErrorMessages.CORRECT_EMAIL);
-        }
-
-        if (err.Error) {
-            return ctx.ok({});
-        }
-
         return ctx.internalServerError();
     }
 };

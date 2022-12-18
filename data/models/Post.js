@@ -4,21 +4,11 @@ class Post extends Model {
     static init(sequelize) {
         return super.init(
             {
-                id: {
-                    type: DataTypes.UUID,
-                    defaultValue: DataTypes.UUIDV4,
-                    primaryKey: true,
-                    allowNull: false
-                },
+                id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true, allowNull: false },
                 title: { type: DataTypes.STRING, allowNull: false },
-                description: { type: DataTypes.STRING, allowNull: false },
-                userId: { type: DataTypes.UUID, allowNull: false }
+                description: { type: DataTypes.STRING, allowNull: false }
             },
-            {
-                sequelize,
-                timestamps: true,
-                tableName: 'post'
-            }
+            { sequelize, timestamps: true, tableName: 'post' }
         );
     }
 
