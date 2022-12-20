@@ -1,14 +1,14 @@
 const _ = require('lodash');
 const { literal } = require('sequelize');
 
-const { postSortFieldType } = require('../../constants');
 const { Post, generateSearchQuery } = require('../../data/models');
+const { postSortFieldType, postFilterFields } = require('../../constants');
 
 const findAll = async ctx => {
     const { q, sortType } = ctx.query;
     const { limit, offset } = ctx.state.paginate;
 
-    const search = !_.isEmpty(q) ? generateSearchQuery(q, ['title', 'firstname', 'lastname']) : {};
+    const search = !_.isEmpty(q) ? generateSearchQuery(q, postFilterFields) : {};
 
     let sortField = '"Post"."createdAt"';
 

@@ -2,15 +2,15 @@ const _ = require('lodash');
 const { literal } = require('sequelize');
 
 const { UserStatus } = require('../../data/lcp');
-const { userSortFieldType } = require('../../constants');
 const ErrorMessages = require('../../constants/ErrorMessages');
 const { User, generateSearchQuery } = require('../../data/models');
+const { userSortFieldType, userFilterFields } = require('../../constants');
 
 const findAll = async ctx => {
     const { limit, offset } = ctx.state.paginate;
     const { q, sortType, status } = ctx.query;
 
-    const search = !_.isEmpty(q) ? generateSearchQuery(q, ['firstname', 'lastname']) : {};
+    const search = !_.isEmpty(q) ? generateSearchQuery(q, userFilterFields) : {};
 
     let sortField = '"createdAt"';
 
