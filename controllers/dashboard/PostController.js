@@ -10,11 +10,9 @@ const findAll = async ctx => {
 
     const search = !_.isEmpty(q) ? generateSearchQuery(q, postFilterFields) : {};
 
-    let sortField = '"Post"."createdAt"';
-
-    if (postSortFieldType[ctx.query.sortField]) {
-        sortField = postSortFieldType[ctx.query.sortField];
-    }
+    const sortField = postSortFieldType[ctx.query.sortField]
+        ? postSortFieldType[ctx.query.sortField]
+        : postSortFieldType.createdAt;
 
     const { rows: posts, count: total } = await Post.scope({
         method: ['postsForAdmin']

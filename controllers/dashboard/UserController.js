@@ -12,11 +12,9 @@ const findAll = async ctx => {
 
     const search = !_.isEmpty(q) ? generateSearchQuery(q, userFilterFields) : {};
 
-    let sortField = '"createdAt"';
-
-    if (userSortFieldType[ctx.query.sortField]) {
-        sortField = userSortFieldType[ctx.query.sortField];
-    }
+    const sortField = userSortFieldType[ctx.query.sortField]
+        ? userSortFieldType[ctx.query.sortField]
+        : userSortFieldType.createdAt;
 
     const { rows: users, count: total } = await User.scope({
         method: ['usersForAdmin', q, sortField, sortType, status]
