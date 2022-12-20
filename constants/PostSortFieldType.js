@@ -1,1 +1,1 @@
-module.exports = ['description', 'title', 'createdAt'];
+module.exports = ['title', 'username', 'createdAt'];

@@ -7,8 +7,10 @@ const adminPostRequestNormalizer = async (ctx, next) => {
         ctx.query.q = '';
     }
 
-    if (!sortField || !postSortFieldType.includes(sortField)) {
-        ctx.query.sortField = 'createdAt';
+    if (!sortField || !postSortFieldType.includes(sortField) || sortField === 'createdAt') {
+        ctx.query.sortField = `"Post"."createdAt"`;
+    } else if (sortField === 'username') {
+        ctx.query.sortField = `CONCAT("user"."firstname", "user"."lastname")`;
     }
 
     if (!sortType || !sortTypes.includes(sortType.toUpperCase())) {

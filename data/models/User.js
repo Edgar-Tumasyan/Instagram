@@ -204,7 +204,7 @@ class User extends Model {
             };
         });
 
-        User.addScope('usersForAdmin', (q, sortField, sortType, status) => {
+        User.addScope('usersForAdmin', () => {
             return {
                 attributes: [
                     'id',
@@ -215,9 +215,7 @@ class User extends Model {
                     [literal(`(SELECT COUNT('*') FROM post WHERE "userId" = "User"."id")::int`), 'postsCount'],
                     [literal(`(SELECT COUNT('*') FROM follow WHERE "followingId" = "User"."id")::int`), 'followersCount'],
                     [literal(`(SELECT COUNT('*') FROM follow WHERE "followerId" = "User"."id")::int`), 'followingsCount']
-                ],
-                where: { status, [Op.or]: [{ firstname: { [Op.like]: `%${q}%` } }, { lastname: { [Op.like]: `%${q}%` } }] },
-                order: [[`${sortField}`, `${sortType}`]]
+                ]
             };
         });
     }

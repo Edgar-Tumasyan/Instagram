@@ -1,3 +1,5 @@
+const { Op } = require('sequelize');
+
 const { User } = require('../../data/models');
 const { UserStatus } = require('../../data/lcp');
 const ErrorMessages = require('../../constants/ErrorMessages');
@@ -8,7 +10,12 @@ const findAll = async ctx => {
 
     const { rows: users, count: total } = await User.scope({
         method: ['usersForAdmin', q, sortField, sortType, status]
-    }).findAndCountAll({ offset, limit });
+    }).findAndCountAll({
+        where: { status, [Op.or]: [{ firstname: { [Op.iLike]: `%${q}%` } }, { lastname: { [Op.iLike]: `%${q}%` } }] },
+        order: [[`${sortField}`, `${sortType}`]],
+        offset,
+        limit
+    });
 
     return ctx.ok({
         users,

@@ -59,11 +59,7 @@ class Post extends Model {
                     [literal(`(SELECT COUNT('*') FROM "attachment" WHERE "postId" = "Post"."id")::int`), 'attachmentsCount']
                 ],
                 include: [
-                    {
-                        attributes: ['id', 'firstname', 'lastname'],
-                        model: models.User,
-                        as: 'user'
-                    },
+                    { attributes: ['id', 'firstname', 'lastname'], model: models.User, as: 'user' },
                     {
                         attributes: ['id', 'attachmentUrl', 'attachmentPublicId'],
                         model: models.Attachment,
@@ -159,7 +155,7 @@ class Post extends Model {
             };
         });
 
-        Post.addScope('postsForAdmin', (q, sortField, sortType) => {
+        Post.addScope('postsForAdmin', () => {
             return {
                 attributes: [
                     'id',
@@ -176,9 +172,7 @@ class Post extends Model {
                         as: 'attachments',
                         separate: true
                     }
-                ],
-                where: { [Op.or]: [{ description: { [Op.like]: `%${q}%` } }, { title: { [Op.like]: `%${q}%` } }] },
-                order: [[`${sortField}`, `${sortType}`]]
+                ]
             };
         });
     }
