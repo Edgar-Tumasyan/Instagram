@@ -1,18 +1,28 @@
-const { Op } = require('sequelize');
+const _ = require('lodash');
+const { literal } = require('sequelize');
 
-const { User } = require('../../data/models');
 const { UserStatus } = require('../../data/lcp');
+const { userSortFieldType } = require('../../constants');
 const ErrorMessages = require('../../constants/ErrorMessages');
+const { User, generateSearchQuery } = require('../../data/models');
 
 const findAll = async ctx => {
     const { limit, offset } = ctx.state.paginate;
-    const { q, sortField, sortType, status } = ctx.query;
+    const { q, sortType, status } = ctx.query;
+
+    const search = !_.isEmpty(q) ? generateSearchQuery(q, ['firstname', 'lastname']) : {};
+
+    let sortField = '"createdAt"';
+
+    if (userSortFieldType[ctx.query.sortField]) {
+        sortField = userSortFieldType[ctx.query.sortField];
+    }
 
     const { rows: users, count: total } = await User.scope({
         method: ['usersForAdmin', q, sortField, sortType, status]
     }).findAndCountAll({
-        where: { status, [Op.or]: [{ firstname: { [Op.iLike]: `%${q}%` } }, { lastname: { [Op.iLike]: `%${q}%` } }] },
-        order: [[`${sortField}`, `${sortType}`]],
+        where: { status, ...search },
+        order: [[literal(`${sortField}`), `${sortType}`]],
         offset,
         limit
     });

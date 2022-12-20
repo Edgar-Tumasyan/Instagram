@@ -1,17 +1,23 @@
+const _ = require('lodash');
 const { literal } = require('sequelize');
 
-const { Post } = require('../../data/models');
+const { postSortFieldType } = require('../../constants');
+const { Post, generateSearchQuery } = require('../../data/models');
 
 const findAll = async ctx => {
+    const { q, sortType } = ctx.query;
     const { limit, offset } = ctx.state.paginate;
-    const { q, sortField, sortType } = ctx.query;
 
-    const search = [
-        literal(`"Post"."title" ILIKE '%${q}%' or "user"."firstname" ILIKE '%${q}%' or "user"."lastname" ILIKE '%${q}%'`)
-    ];
+    const search = !_.isEmpty(q) ? generateSearchQuery(q, ['title', 'firstname', 'lastname']) : {};
+
+    let sortField = '"Post"."createdAt"';
+
+    if (postSortFieldType[ctx.query.sortField]) {
+        sortField = postSortFieldType[ctx.query.sortField];
+    }
 
     const { rows: posts, count: total } = await Post.scope({
-        method: ['postsForAdmin', q]
+        method: ['postsForAdmin']
     }).findAndCountAll({
         where: { ...search },
         order: [[literal(`${sortField}`), `${sortType}`]],

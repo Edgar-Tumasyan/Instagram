@@ -1,1 +1,1 @@
-module.exports = ['firstname', 'lastname', 'createdAt'];
+module.exports = { firstname: 'firstname', lastname: 'lastname', createdAt: '"createdAt"' };
