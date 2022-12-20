@@ -12,7 +12,9 @@ module.exports = () => async (ctx, next) => {
             const field = err.parent.constraint.split('_')[1];
             const message = `${field} already exist`;
 
-            return ctx.unprocessable_entity({ field, message });
+            errors.push({ field, message });
+
+            return ctx.unprocessable_entity({ message: 'UniqueConstraintError', errors });
         }
 
         if (err.name === 'SequelizeValidationError') {

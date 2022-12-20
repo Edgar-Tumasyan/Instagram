@@ -1,23 +1,21 @@
 const { User } = require('../../data/models');
+const { UserStatus } = require('../../data/lcp');
+const ErrorMessages = require('../../constants/ErrorMessages');
 
 const findAll = async ctx => {
     const { limit, offset } = ctx.state.paginate;
-
     const { q, sortField, sortType, status } = ctx.query;
 
     const { rows: users, count: total } = await User.scope({
         method: ['usersForAdmin', q, sortField, sortType, status]
-    }).findAndCountAll({
-        offset,
-        limit
-    });
+    }).findAndCountAll({ offset, limit });
 
     return ctx.ok({
         users,
         _meta: {
             total,
-            currentPage: Math.ceil((offset + 1) / limit) || 1,
-            pageCount: Math.ceil(total / limit)
+            pageCount: Math.ceil(total / limit),
+            currentPage: Math.ceil((offset + 1) / limit) || 1
         }
     });
 };
@@ -25,7 +23,15 @@ const findAll = async ctx => {
 const deactivateUser = async ctx => {
     const { id } = ctx.params;
 
-    await User.update({ status: 'inactive' }, { where: { id } });
+    const user = await User.findByPk(id);
+
+    if (!user) {
+        return ctx.notFound(ErrorMessages.NO_USER + `${id}`);
+    }
+
+    user.status = UserStatus.Inactive;
+
+    await user.save();
 
     return ctx.noContent();
 };
@@ -33,7 +39,15 @@ const deactivateUser = async ctx => {
 const activateUser = async ctx => {
     const { id } = ctx.params;
 
-    await User.update({ status: 'active' }, { where: { id } });
+    const user = await User.findByPk(id);
+
+    if (!user) {
+        return ctx.notFound(ErrorMessages.NO_USER + `${id}`);
+    }
+
+    user.status = UserStatus.Active;
+
+    await user.save();
 
     return ctx.noContent();
 };

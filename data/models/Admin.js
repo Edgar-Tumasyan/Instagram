@@ -1,5 +1,9 @@
 const _ = require('lodash');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const { DataTypes, Model } = require('sequelize');
+
+const config = require('../../config');
 
 class Admin extends Model {
     static init(sequelize) {
@@ -13,8 +17,23 @@ class Admin extends Model {
                 avatar: DataTypes.STRING,
                 avatarPublicId: DataTypes.STRING
             },
-            { sequelize, timestamps: true, tableName: 'admin' }
+            {
+                sequelize,
+                timestamps: true,
+                tableName: 'admin',
+                hooks: {
+                    beforeCreate: async admin => {
+                        admin.password = await bcrypt.hash(admin.password, 10);
+                    }
+                }
+            }
         );
+    }
+
+    generateToken(role) {
+        const { id, email } = this;
+
+        return jwt.sign({ id, email, role }, config.JWT_SECRET, { expiresIn: config.EXPIRES_IN });
     }
 
     toJSON() {

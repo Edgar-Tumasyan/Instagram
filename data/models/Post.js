@@ -158,6 +158,29 @@ class Post extends Model {
                 where: { userId: { [Op.in]: followedUsers } }
             };
         });
+
+        Post.addScope('postsForAdmin', (q, sortField, sortType) => {
+            return {
+                attributes: [
+                    'id',
+                    'title',
+                    'description',
+                    [literal(`(SELECT COUNT('*') FROM "like" WHERE "postId" = "Post"."id")::int`), 'likesCount'],
+                    [literal(`(SELECT COUNT('*') FROM attachment WHERE "postId" = "Post"."id")::int`), 'attachmentsCount']
+                ],
+                include: [
+                    { attributes: ['id', 'firstname', 'lastname'], model: models.User, as: 'user' },
+                    {
+                        attributes: ['id', 'attachmentUrl', 'attachmentPublicId'],
+                        model: models.Attachment,
+                        as: 'attachments',
+                        separate: true
+                    }
+                ],
+                where: { [Op.or]: [{ description: { [Op.like]: `%${q}%` } }, { title: { [Op.like]: `%${q}%` } }] },
+                order: [[`${sortField}`, `${sortType}`]]
+            };
+        });
     }
 }
 
