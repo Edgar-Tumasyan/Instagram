@@ -2,9 +2,8 @@ const _ = require('lodash');
 const { literal } = require('sequelize');
 
 const { Follow, User, Notification, sequelize, generateSearchQuery } = require('../data/models');
+const { SortParam, SearchParam, ErrorMessages } = require('../constants');
 const { FollowStatus, NotificationType } = require('../data/lcp');
-const ErrorMessages = require('../constants/ErrorMessages');
-const { SortParam, FilterParam } = require('../constants');
 
 const getUserFollowers = async ctx => {
     const { q, sortType, sortField, status, profileCategory } = ctx.query;
@@ -16,7 +15,7 @@ const getUserFollowers = async ctx => {
 
     const sortKey = SortParam.USER[sortField] ? SortParam.USER[sortField] : SortParam.USER.default;
 
-    const searchCondition = !_.isEmpty(q) ? generateSearchQuery(q, FilterParam.USER) : {};
+    const searchCondition = !_.isEmpty(q) ? generateSearchQuery(q, SearchParam.USER) : {};
 
     const { rows: users, count: total } = await User.scope({
         method: ['followers', followingId, userId, filter]
@@ -40,7 +39,7 @@ const getUserFollowings = async ctx => {
 
     const sortKey = SortParam.USER[sortField] ? SortParam.USER[sortField] : SortParam.USER.default;
 
-    const searchCondition = !_.isEmpty(q) ? generateSearchQuery(q, FilterParam.USER) : {};
+    const searchCondition = !_.isEmpty(q) ? generateSearchQuery(q, SearchParam.USER) : {};
 
     const { rows: users, count: total } = await User.scope({
         method: ['followings', followerId, userId, filter]

@@ -2,7 +2,7 @@ const _ = require('lodash');
 const { literal } = require('sequelize');
 
 const { Post, generateSearchQuery } = require('../../data/models');
-const { SortParam, FilterParam } = require('../../constants');
+const { SortParam, SearchParam } = require('../../constants');
 
 const findAll = async ctx => {
     const { limit, offset, pagination } = ctx.state.paginate;
@@ -10,7 +10,7 @@ const findAll = async ctx => {
 
     const sortKey = SortParam.POST[sortField] ? SortParam.POST[sortField] : SortParam.POST.default;
 
-    const searchCondition = !_.isEmpty(q) ? generateSearchQuery(q, FilterParam.POST) : {};
+    const searchCondition = !_.isEmpty(q) ? generateSearchQuery(q, SearchParam.POST) : {};
 
     const { rows: posts, count: total } = await Post.scope({
         method: ['postsForAdmin']

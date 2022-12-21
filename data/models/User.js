@@ -4,7 +4,6 @@ const jwt = require('jsonwebtoken');
 const { DataTypes, Model, literal, Op } = require('sequelize');
 
 const { UserRole, ProfileCategory, UserStatus } = require('../lcp');
-const FilterType = require('../../constants/FilterType');
 const config = require('../../config');
 
 class User extends Model {
@@ -63,10 +62,14 @@ class User extends Model {
     static filtration(filter) {
         const filterCondition = {};
 
-        for (const element in filter) {
-            if (FilterType[element].includes(filter[element])) {
-                filterCondition[element] = filter[element];
-            }
+        const { status, profileCategory } = filter;
+
+        if (_.values(UserStatus).includes(status)) {
+            filterCondition.status = status;
+        }
+
+        if (_.values(ProfileCategory).includes(profileCategory)) {
+            filterCondition.profileCategory = profileCategory;
         }
 
         return filterCondition;

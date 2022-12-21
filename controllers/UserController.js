@@ -1,11 +1,9 @@
 const _ = require('lodash');
 const { literal } = require('sequelize');
 
+const { SearchParam, SortParam, ErrorMessages, ImageType } = require('../constants');
 const { User, generateSearchQuery } = require('../data/models');
-const ErrorMessages = require('../constants/ErrorMessages');
-const { FilterParam, SortParam } = require('../constants');
 const Cloudinary = require('../components/Cloudinary');
-const avatarType = require('../constants/ImageType');
 
 const findAll = async ctx => {
     const { q, sortType, sortField, status, profileCategory } = ctx.query;
@@ -16,7 +14,7 @@ const findAll = async ctx => {
 
     const sortKey = SortParam.USER[sortField] ? SortParam.USER[sortField] : SortParam.USER.default;
 
-    const searchCondition = !_.isEmpty(q) ? generateSearchQuery(q, FilterParam.USER) : {};
+    const searchCondition = !_.isEmpty(q) ? generateSearchQuery(q, SearchParam.USER) : {};
 
     const { rows: users, count: total } = await User.scope({ method: ['profiles', userId, filter] }).findAndCountAll({
         order: [[literal(`${sortKey}`), `${sortType}`]],
@@ -76,7 +74,7 @@ const uploadAvatar = async ctx => {
         return ctx.badRequest(ErrorMessages.MANY_AVATARS);
     }
 
-    if (!avatarType.includes(reqAvatar.ext)) {
+    if (!ImageType.includes(reqAvatar.ext)) {
         return ctx.badRequest(ErrorMessages.AVATAR_TYPE);
     }
 

@@ -1,15 +1,15 @@
 module.exports = {
     TYPE: ['ASC', 'DESC'],
     USER: {
-        firstname: '"User"."firstname"',
         lastname: '"User"."lastname"',
+        default: '"User"."createdAt"',
         createdAt: '"User"."createdAt"',
-        default: '"User"."createdAt"'
+        firstname: '"User"."firstname"'
     },
     POST: {
         title: '"Post"."title"',
-        username: 'CONCAT("user"."firstname", "user"."lastname")',
+        default: '"Post"."createdAt"',
         createdAt: '"Post"."createdAt"',
-        default: '"Post"."createdAt"'
+        username: 'CONCAT("user"."firstname", "user"."lastname")'
     }
 };

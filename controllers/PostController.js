@@ -1,11 +1,9 @@
 const _ = require('lodash');
+const { literal } = require('sequelize');
 
 const { Post, Attachment, User, Follow, sequelize, generateSearchQuery } = require('../data/models');
-const ErrorMessages = require('../constants/ErrorMessages');
-const { SortParam, FilterParam } = require('../constants');
-const attachmentType = require('../constants/ImageType');
+const { SortParam, SearchParam, ErrorMessages, ImageType } = require('../constants');
 const Cloudinary = require('../components/Cloudinary');
-const { literal } = require('sequelize');
 
 const main = async ctx => {
     const { limit, offset, pagination } = ctx.state.paginate;
@@ -14,7 +12,7 @@ const main = async ctx => {
 
     const sortKey = SortParam.POST[sortField] ? SortParam.POST[sortField] : SortParam.POST.default;
 
-    const searchCondition = !_.isEmpty(q) ? generateSearchQuery(q, FilterParam.POST) : {};
+    const searchCondition = !_.isEmpty(q) ? generateSearchQuery(q, SearchParam.POST) : {};
 
     const { rows: posts, count: total } = await Post.scope({
         method: ['mainPosts', userId]
@@ -34,7 +32,7 @@ const findAll = async ctx => {
 
     const sortKey = SortParam.POST[sortField] ? SortParam.POST[sortField] : SortParam.POST.default;
 
-    const searchCondition = !_.isEmpty(q) ? generateSearchQuery(q, FilterParam.POST) : {};
+    const searchCondition = !_.isEmpty(q) ? generateSearchQuery(q, SearchParam.POST) : {};
 
     const { rows: posts, count: total } = await Post.scope({
         method: ['allPosts']
@@ -87,7 +85,7 @@ const getUserPosts = async ctx => {
 
     const sortKey = SortParam.POST[sortField] ? SortParam.POST[sortField] : SortParam.POST.default;
 
-    const searchCondition = !_.isEmpty(q) ? generateSearchQuery(q, FilterParam.POST) : {};
+    const searchCondition = !_.isEmpty(q) ? generateSearchQuery(q, SearchParam.POST) : {};
 
     const { rows: posts, count: total } = await Post.scope({
         method: ['userAllPosts', profileId]
@@ -110,7 +108,7 @@ const create = async ctx => {
 
     if (!_.isUndefined(...postAttachments)) {
         for (const attachment of postAttachments) {
-            if (!attachmentType.includes(attachment.ext)) {
+            if (!ImageType.includes(attachment.ext)) {
                 return ctx.badRequest(ErrorMessages.ATTACHMENT_TYPE);
             }
         }
@@ -173,7 +171,7 @@ const update = async ctx => {
 
     if (!_.isUndefined(...newAttachments)) {
         for (const attachment of newAttachments) {
-            if (!attachmentType.includes(attachment.ext)) {
+            if (!ImageType.includes(attachment.ext)) {
                 return ctx.badRequest(ErrorMessages.ATTACHMENT_TYPE);
             }
         }

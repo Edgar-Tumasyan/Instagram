@@ -1,4 +1,6 @@
 module.exports = {
     SortParam: require('./SortParam'),
-    FilterParam: require('./FilterParam')
+    SearchParam: require('./SearchParam'),
+    ErrorMessages: require('./ErrorMessages'),
+    ImageType: require('./ImageType')
 };

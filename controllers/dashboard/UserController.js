@@ -1,9 +1,8 @@
 const _ = require('lodash');
 const { literal } = require('sequelize');
 
+const { SortParam, SearchParam, ErrorMessages } = require('../../constants');
 const { User, generateSearchQuery } = require('../../data/models');
-const ErrorMessages = require('../../constants/ErrorMessages');
-const { SortParam, FilterParam } = require('../../constants');
 const { UserStatus } = require('../../data/lcp');
 
 const findAll = async ctx => {
@@ -14,7 +13,7 @@ const findAll = async ctx => {
 
     const sortKey = SortParam.USER[sortField] ? SortParam.USER[sortField] : SortParam.USER.default;
 
-    const searchCondition = !_.isEmpty(q) ? generateSearchQuery(q, FilterParam.USER) : {};
+    const searchCondition = !_.isEmpty(q) ? generateSearchQuery(q, SearchParam.USER) : {};
 
     const { rows: users, count: total } = await User.scope({
         method: ['usersForAdmin', filter]
