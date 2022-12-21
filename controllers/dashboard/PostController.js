@@ -2,35 +2,26 @@ const _ = require('lodash');
 const { literal } = require('sequelize');
 
 const { Post, generateSearchQuery } = require('../../data/models');
-const { postSortFieldType, postFilterFields } = require('../../constants');
+const { SortParam, FilterParam } = require('../../constants');
 
 const findAll = async ctx => {
-    const { q, sortType } = ctx.query;
-    const { limit, offset } = ctx.state.paginate;
+    const { limit, offset, pagination } = ctx.state.paginate;
+    const { q, sortType, sortField } = ctx.query;
 
-    const search = !_.isEmpty(q) ? generateSearchQuery(q, postFilterFields) : {};
+    const sortKey = SortParam.POST[sortField] ? SortParam.POST[sortField] : SortParam.POST.default;
 
-    const sortField = postSortFieldType[ctx.query.sortField]
-        ? postSortFieldType[ctx.query.sortField]
-        : postSortFieldType.createdAt;
+    const searchCondition = !_.isEmpty(q) ? generateSearchQuery(q, FilterParam.POST) : {};
 
     const { rows: posts, count: total } = await Post.scope({
         method: ['postsForAdmin']
     }).findAndCountAll({
-        where: { ...search },
-        order: [[literal(`${sortField}`), `${sortType}`]],
+        order: [[literal(`${sortKey}`), `${sortType}`]],
+        where: { ...searchCondition },
         offset,
         limit
     });
 
-    return ctx.ok({
-        posts,
-        _meta: {
-            total,
-            pageCount: Math.ceil(total / limit),
-            currentPage: Math.ceil((offset + 1) / limit) || 1
-        }
-    });
+    return ctx.ok({ posts, _meta: pagination(total) });
 };
 
 module.exports = { findAll };

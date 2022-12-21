@@ -1,7 +1,7 @@
 const Router = require('koa-router');
 
-const { auth } = require('../middlewares');
 const UserController = require('../controllers/UserController');
+const { auth } = require('../middlewares');
 
 const router = new Router({ prefix: '/users' });
 

@@ -1,44 +1,51 @@
 const _ = require('lodash');
 
-const Cloudinary = require('../components/Cloudinary');
-const attachmentType = require('../constants/imageType');
+const { Post, Attachment, User, Follow, sequelize, generateSearchQuery } = require('../data/models');
 const ErrorMessages = require('../constants/ErrorMessages');
-const { Post, Attachment, User, Follow, sequelize } = require('../data/models');
+const { SortParam, FilterParam } = require('../constants');
+const attachmentType = require('../constants/ImageType');
+const Cloudinary = require('../components/Cloudinary');
+const { literal } = require('sequelize');
 
 const main = async ctx => {
+    const { limit, offset, pagination } = ctx.state.paginate;
+    const { q, sortType, sortField } = ctx.query;
     const { id: userId } = ctx.state.user;
 
-    const { limit, offset } = ctx.state.paginate;
+    const sortKey = SortParam.POST[sortField] ? SortParam.POST[sortField] : SortParam.POST.default;
 
-    const { rows: posts, count: total } = await Post.scope({ method: ['mainPosts', userId] }).findAndCountAll({
+    const searchCondition = !_.isEmpty(q) ? generateSearchQuery(q, FilterParam.POST) : {};
+
+    const { rows: posts, count: total } = await Post.scope({
+        method: ['mainPosts', userId]
+    }).findAndCountAll({
+        order: [[literal(`${sortKey}`), `${sortType}`]],
+        where: { ...searchCondition },
         offset,
         limit
     });
 
-    return ctx.ok({
-        posts,
-        _meta: {
-            total,
-            pageCount: Math.ceil(total / limit),
-            currentPage: Math.ceil((offset + 1) / limit) || 1
-        }
-    });
+    return ctx.ok({ posts, _meta: pagination(total) });
 };
 
 const findAll = async ctx => {
-    const { limit, offset } = ctx.state.paginate;
+    const { limit, offset, pagination } = ctx.state.paginate;
+    const { q, sortType, sortField } = ctx.query;
 
-    const { rows: posts, count: total } = await Post.scope({ method: ['allPosts'] }).findAndCountAll({ offset, limit });
+    const sortKey = SortParam.POST[sortField] ? SortParam.POST[sortField] : SortParam.POST.default;
 
-    return ctx.ok({
-        posts,
-        _meta: {
-            total,
-            limit,
-            pageCount: Math.ceil(total / limit),
-            currentPage: Math.ceil((offset + 1) / limit) || 1
-        }
+    const searchCondition = !_.isEmpty(q) ? generateSearchQuery(q, FilterParam.POST) : {};
+
+    const { rows: posts, count: total } = await Post.scope({
+        method: ['allPosts']
+    }).findAndCountAll({
+        order: [[literal(`${sortKey}`), `${sortType}`]],
+        where: { ...searchCondition },
+        offset,
+        limit
     });
+
+    return ctx.ok({ posts, _meta: pagination(total) });
 };
 
 const findOne = async ctx => {
@@ -63,8 +70,10 @@ const findOne = async ctx => {
 };
 
 const getUserPosts = async ctx => {
-    const { id: userId } = ctx.state.user;
+    const { limit, offset, pagination } = ctx.state.paginate;
+    const { q, sortType, sortField } = ctx.query;
     const { profileId } = ctx.request.params;
+    const { id: userId } = ctx.state.user;
 
     const user = await User.findByPk(profileId, { raw: true });
 
@@ -76,21 +85,20 @@ const getUserPosts = async ctx => {
         }
     }
 
-    const { limit, offset } = ctx.state.paginate;
+    const sortKey = SortParam.POST[sortField] ? SortParam.POST[sortField] : SortParam.POST.default;
 
-    const { rows: posts, count: total } = await Post.scope({ method: ['userAllPosts', profileId] }).findAndCountAll({
+    const searchCondition = !_.isEmpty(q) ? generateSearchQuery(q, FilterParam.POST) : {};
+
+    const { rows: posts, count: total } = await Post.scope({
+        method: ['userAllPosts', profileId]
+    }).findAndCountAll({
+        order: [[literal(`${sortKey}`), `${sortType}`]],
+        where: { ...searchCondition },
         limit,
         offset
     });
 
-    return ctx.ok({
-        posts,
-        _meta: {
-            total,
-            pageCount: Math.ceil(total / limit),
-            currentPage: Math.ceil((offset + 1) / limit) || 1
-        }
-    });
+    return ctx.ok({ posts, _meta: pagination(total) });
 };
 
 const create = async ctx => {

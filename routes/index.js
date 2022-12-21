@@ -1,12 +1,12 @@
 const Router = require('koa-router');
 
+const notificationRoutes = require('./notification');
+const userFollowRoutes = require('./follow');
+const messageRoutes = require('./messages');
+const threadRoutes = require('./thread');
 const userRoutes = require('./user');
 const postRoutes = require('./post');
 const likeRoutes = require('./like');
-const threadRoutes = require('./thread');
-const messageRoutes = require('./messages');
-const userFollowRoutes = require('./follow');
-const notificationRoutes = require('./notification');
 
 const router = new Router({ prefix: '/api/v1' });
 

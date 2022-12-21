@@ -1,7 +1,7 @@
 const Router = require('koa-router');
 
-const { auth } = require('../middlewares');
 const PostController = require('../controllers/PostController');
+const { auth } = require('../middlewares');
 
 const router = new Router({ prefix: '/posts' });
 

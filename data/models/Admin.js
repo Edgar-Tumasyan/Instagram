@@ -36,6 +36,10 @@ class Admin extends Model {
         return jwt.sign({ id, email, role }, config.JWT_SECRET, { expiresIn: config.EXPIRES_IN });
     }
 
+    async comparePassword(password, adminPassword) {
+        return await bcrypt.compare(password, adminPassword);
+    }
+
     toJSON() {
         const admin = this.get();
 

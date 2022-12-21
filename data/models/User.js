@@ -3,8 +3,9 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { DataTypes, Model, literal, Op } = require('sequelize');
 
-const config = require('../../config');
 const { UserRole, ProfileCategory, UserStatus } = require('../lcp');
+const FilterType = require('../../constants/FilterType');
+const config = require('../../config');
 
 class User extends Model {
     static init(sequelize) {
@@ -55,6 +56,22 @@ class User extends Model {
         return jwt.sign({ id, email, role }, config.JWT_SECRET, { expiresIn: config.EXPIRES_IN });
     }
 
+    async comparePassword(password, userPassword) {
+        return await bcrypt.compare(password, userPassword);
+    }
+
+    static filtration(filter) {
+        const filterCondition = {};
+
+        for (const element in filter) {
+            if (FilterType[element].includes(filter[element])) {
+                filterCondition[element] = filter[element];
+            }
+        }
+
+        return filterCondition;
+    }
+
     static addScopes(models) {
         User.addScope('profile', (profileId, userId) => {
             return {
@@ -82,7 +99,9 @@ class User extends Model {
             };
         });
 
-        User.addScope('profiles', userId => {
+        User.addScope('profiles', (userId, filter) => {
+            const filterCondition = this.filtration(filter);
+
             return {
                 attributes: [
                     'id',
@@ -102,11 +121,13 @@ class User extends Model {
                         'followStatus'
                     ]
                 ],
-                where: { id: { [Op.not]: userId } }
+                where: { id: { [Op.not]: userId }, ...filterCondition }
             };
         });
 
-        User.addScope('followers', (followingId, userId) => {
+        User.addScope('followers', (followingId, userId, filter) => {
+            const filterCondition = this.filtration(filter);
+
             return {
                 attributes: [
                     'id',
@@ -128,12 +149,15 @@ class User extends Model {
                     ]
                 ],
                 where: {
+                    ...filterCondition,
                     id: { [Op.in]: models.Follow.generateNestedQuery({ attributes: ['followerId'], where: { followingId } }) }
                 }
             };
         });
 
-        User.addScope('followings', (followerId, userId) => {
+        User.addScope('followings', (followerId, userId, filter) => {
+            const filterCondition = this.filtration(filter);
+
             return {
                 attributes: [
                     'id',
@@ -155,12 +179,15 @@ class User extends Model {
                     ]
                 ],
                 where: {
+                    ...filterCondition,
                     id: { [Op.in]: models.Follow.generateNestedQuery({ attributes: ['followingId'], where: { followerId } }) }
                 }
             };
         });
 
-        User.addScope('likesUsers', (postId, userId) => {
+        User.addScope('likesUsers', (postId, userId, filter) => {
+            const filterCondition = this.filtration(filter);
+
             return {
                 attributes: [
                     'id',
@@ -182,9 +209,8 @@ class User extends Model {
                     ]
                 ],
                 where: {
-                    id: {
-                        [Op.in]: models.Like.generateNestedQuery({ attributes: ['userId'], where: { postId } })
-                    }
+                    ...filterCondition,
+                    id: { [Op.in]: models.Like.generateNestedQuery({ attributes: ['userId'], where: { postId } }) }
                 }
             };
         });
@@ -204,18 +230,22 @@ class User extends Model {
             };
         });
 
-        User.addScope('usersForAdmin', () => {
+        User.addScope('usersForAdmin', filter => {
+            const filterCondition = this.filtration(filter);
+
             return {
                 attributes: [
                     'id',
                     'firstname',
                     'lastname',
                     'avatar',
+                    'createdAt',
                     'status',
                     [literal(`(SELECT COUNT('*') FROM post WHERE "userId" = "User"."id")::int`), 'postsCount'],
                     [literal(`(SELECT COUNT('*') FROM follow WHERE "followingId" = "User"."id")::int`), 'followersCount'],
                     [literal(`(SELECT COUNT('*') FROM follow WHERE "followerId" = "User"."id")::int`), 'followingsCount']
-                ]
+                ],
+                where: { ...filterCondition }
             };
         });
     }

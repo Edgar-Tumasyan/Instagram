@@ -1,31 +1,38 @@
-const { NotificationType } = require('../data/lcp');
+const _ = require('lodash');
+const { literal } = require('sequelize');
+
+const { Post, Like, User, Follow, Notification, sequelize, generateSearchQuery } = require('../data/models');
 const ErrorMessages = require('../constants/ErrorMessages');
-const { Post, Like, User, Follow, Notification, sequelize } = require('../data/models');
+const { SortParam, FilterParam } = require('../constants');
+const { NotificationType } = require('../data/lcp');
 
 const postLikesUsers = async ctx => {
-    const { limit, offset } = ctx.state.paginate;
-
+    const { q, sortType, sortField, status, profileCategory } = ctx.query;
+    const { limit, offset, pagination } = ctx.state.paginate;
     const { postId } = ctx.request.params;
     const { id: userId } = ctx.state.user;
 
-    const { rows: users, count: total } = await User.scope({ method: ['likesUsers', postId, userId] }).findAndCountAll({
+    const filter = { status, profileCategory };
+
+    const sortKey = SortParam.USER[sortField] ? SortParam.USER[sortField] : SortParam.USER.default;
+
+    const searchCondition = !_.isEmpty(q) ? generateSearchQuery(q, FilterParam.USER) : {};
+
+    const { rows: users, count: total } = await User.scope({
+        method: ['likesUsers', postId, userId, filter]
+    }).findAndCountAll({
+        order: [[literal(`${sortKey}`), `${sortType}`]],
+        where: { ...searchCondition },
         limit,
         offset
     });
 
-    return ctx.ok({
-        users,
-        _meta: {
-            total,
-            pageCount: Math.ceil(total / limit),
-            currentPage: Math.ceil((offset + 1) / limit) || 1
-        }
-    });
+    return ctx.ok({ users, _meta: pagination(total) });
 };
 
 const create = async ctx => {
-    const { postId } = ctx.params;
     const { id: userId } = ctx.state.user;
+    const { postId } = ctx.params;
 
     const post = await Post.scope({ method: ['singlePost', userId] }).findByPk(postId);
 

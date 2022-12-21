@@ -1,8 +1,8 @@
 const Router = require('koa-router');
 
+const adminRoutes = require('./admin');
 const userRoutes = require('./user');
 const postRoutes = require('./post');
-const adminRoutes = require('./admin');
 
 const router = new Router({ prefix: '/dashboard' });
 

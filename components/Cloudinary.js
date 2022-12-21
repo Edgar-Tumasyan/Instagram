@@ -1,7 +1,7 @@
 const cloudinary = require('cloudinary').v2;
 
-const config = require('../config');
 const resizeImage = require('./resizeImage');
+const config = require('../config');
 
 cloudinary.config(config.cloudinary);
 

@@ -1,7 +1,7 @@
 const Router = require('koa-router');
 
-const auth = require('../middlewares/auth');
 const NotificationController = require('../controllers/NotificationController');
+const auth = require('../middlewares/auth');
 
 const router = new Router({ prefix: '/notifications' });
 

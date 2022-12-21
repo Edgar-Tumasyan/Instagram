@@ -1,31 +1,36 @@
 const _ = require('lodash');
-const bcrypt = require('bcrypt');
+const { literal } = require('sequelize');
 
-const { User } = require('../data/models');
-const avatarType = require('../constants/imageType');
-const Cloudinary = require('../components/Cloudinary');
+const { User, generateSearchQuery } = require('../data/models');
 const ErrorMessages = require('../constants/ErrorMessages');
+const { FilterParam, SortParam } = require('../constants');
+const Cloudinary = require('../components/Cloudinary');
+const avatarType = require('../constants/ImageType');
 
 const findAll = async ctx => {
+    const { q, sortType, sortField, status, profileCategory } = ctx.query;
+    const { limit, offset, pagination } = ctx.state.paginate;
     const { id: userId } = ctx.state.user;
 
-    const { limit, offset } = ctx.state.paginate;
+    const filter = { status, profileCategory };
 
-    const { rows: users, count: total } = await User.scope({ method: ['profiles', userId] }).findAndCountAll({ offset, limit });
+    const sortKey = SortParam.USER[sortField] ? SortParam.USER[sortField] : SortParam.USER.default;
 
-    return ctx.ok({
-        users,
-        _meta: {
-            total,
-            pageCount: Math.ceil(total / limit),
-            currentPage: Math.ceil((offset + 1) / limit) || 1
-        }
+    const searchCondition = !_.isEmpty(q) ? generateSearchQuery(q, FilterParam.USER) : {};
+
+    const { rows: users, count: total } = await User.scope({ method: ['profiles', userId, filter] }).findAndCountAll({
+        order: [[literal(`${sortKey}`), `${sortType}`]],
+        where: { ...searchCondition },
+        offset,
+        limit
     });
+
+    return ctx.ok({ users, _meta: pagination(total) });
 };
 
 const findOne = async ctx => {
-    const { id: userId } = ctx.state.user;
     const { id: profileId } = ctx.request.params;
+    const { id: userId } = ctx.state.user;
 
     const user = await User.scope({ method: ['profile', profileId, userId] }).findByPk(profileId);
 
@@ -53,7 +58,7 @@ const login = async ctx => {
 
     const user = await User.findOne({ where: { email } });
 
-    if (!user || !(await bcrypt.compare(password, user.password))) {
+    if (!user || !(await user.comparePassword(password, user.password))) {
         return ctx.notFound(ErrorMessages.INVALID_CREDENTIALS);
     }
 
@@ -87,13 +92,13 @@ const uploadAvatar = async ctx => {
 };
 
 const changeProfileCategory = async ctx => {
-    const { id } = ctx.state.user;
-
     const { profileCategory } = ctx.request.body;
 
     if (!profileCategory) {
         return ctx.badRequest(ErrorMessages.PROFILE_CATEGORY);
     }
+
+    const { id } = ctx.state.user;
 
     await User.update({ profileCategory }, { where: { id } });
 

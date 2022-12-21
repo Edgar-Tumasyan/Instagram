@@ -1,38 +1,31 @@
 const _ = require('lodash');
 const { literal } = require('sequelize');
 
-const { UserStatus } = require('../../data/lcp');
-const ErrorMessages = require('../../constants/ErrorMessages');
 const { User, generateSearchQuery } = require('../../data/models');
-const { userSortFieldType, userFilterFields } = require('../../constants');
+const ErrorMessages = require('../../constants/ErrorMessages');
+const { SortParam, FilterParam } = require('../../constants');
+const { UserStatus } = require('../../data/lcp');
 
 const findAll = async ctx => {
-    const { limit, offset } = ctx.state.paginate;
-    const { q, sortType, status } = ctx.query;
+    const { q, sortType, sortField, status, profileCategory } = ctx.query;
+    const { limit, offset, pagination } = ctx.state.paginate;
 
-    const search = !_.isEmpty(q) ? generateSearchQuery(q, userFilterFields) : {};
+    const filter = { status, profileCategory };
 
-    const sortField = userSortFieldType[ctx.query.sortField]
-        ? userSortFieldType[ctx.query.sortField]
-        : userSortFieldType.createdAt;
+    const sortKey = SortParam.USER[sortField] ? SortParam.USER[sortField] : SortParam.USER.default;
+
+    const searchCondition = !_.isEmpty(q) ? generateSearchQuery(q, FilterParam.USER) : {};
 
     const { rows: users, count: total } = await User.scope({
-        method: ['usersForAdmin', q, sortField, sortType, status]
+        method: ['usersForAdmin', filter]
     }).findAndCountAll({
-        where: { status, ...search },
-        order: [[literal(`${sortField}`), `${sortType}`]],
+        order: [[literal(`${sortKey}`), `${sortType}`]],
+        where: { ...searchCondition },
         offset,
         limit
     });
 
-    return ctx.ok({
-        users,
-        _meta: {
-            total,
-            pageCount: Math.ceil(total / limit),
-            currentPage: Math.ceil((offset + 1) / limit) || 1
-        }
-    });
+    return ctx.ok({ users, _meta: pagination(total) });
 };
 
 const deactivateUser = async ctx => {

@@ -1,7 +1,9 @@
 const respond = require('koa-respond');
 const compose = require('koa-compose');
 
-const pagination = require('./pagination');
 const errorHandler = require('./errorHandler');
+const pagination = require('./pagination');
+const ordering = require('./ordering');
 
-module.exports = () => compose([respond({ statusMethods: { unprocessable_entity: 422 } }), errorHandler(), pagination()]);
+module.exports = () =>
+    compose([respond({ statusMethods: { unprocessable_entity: 422 } }), errorHandler(), pagination(), ordering()]);

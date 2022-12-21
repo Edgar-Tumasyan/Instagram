@@ -1,52 +1,62 @@
-const ErrorMessages = require('../constants/ErrorMessages');
+const _ = require('lodash');
+const { literal } = require('sequelize');
+
+const { Follow, User, Notification, sequelize, generateSearchQuery } = require('../data/models');
 const { FollowStatus, NotificationType } = require('../data/lcp');
-const { Follow, User, Notification, sequelize } = require('../data/models');
+const ErrorMessages = require('../constants/ErrorMessages');
+const { SortParam, FilterParam } = require('../constants');
 
 const getUserFollowers = async ctx => {
-    const { limit, offset } = ctx.state.paginate;
-
-    const { id: userId } = ctx.state.user;
+    const { q, sortType, sortField, status, profileCategory } = ctx.query;
+    const { limit, offset, pagination } = ctx.state.paginate;
     const { profileId: followingId } = ctx.request.params;
+    const { id: userId } = ctx.state.user;
 
-    const { rows: users, count: total } = await User.scope({ method: ['followers', followingId, userId] }).findAndCountAll({
+    const filter = { status, profileCategory };
+
+    const sortKey = SortParam.USER[sortField] ? SortParam.USER[sortField] : SortParam.USER.default;
+
+    const searchCondition = !_.isEmpty(q) ? generateSearchQuery(q, FilterParam.USER) : {};
+
+    const { rows: users, count: total } = await User.scope({
+        method: ['followers', followingId, userId, filter]
+    }).findAndCountAll({
+        order: [[literal(`${sortKey}`), `${sortType}`]],
+        where: { ...searchCondition },
         offset,
         limit
     });
 
-    return ctx.ok({
-        users,
-        _meta: {
-            total,
-            pageCount: Math.ceil(total / limit),
-            currentPage: Math.ceil((offset + 1) / limit) || 1
-        }
-    });
+    return ctx.ok({ users, _meta: pagination(total) });
 };
 
 const getUserFollowings = async ctx => {
-    const { limit, offset } = ctx.state.paginate;
-
-    const { id: userId } = ctx.state.user;
+    const { q, sortField, sortType, status, profileCategory } = ctx.query;
+    const { limit, offset, pagination } = ctx.state.paginate;
     const { profileId: followerId } = ctx.request.params;
+    const { id: userId } = ctx.state.user;
 
-    const { rows: users, count: total } = await User.scope({ method: ['followings', followerId, userId] }).findAndCountAll({
+    const filter = { status, profileCategory };
+
+    const sortKey = SortParam.USER[sortField] ? SortParam.USER[sortField] : SortParam.USER.default;
+
+    const searchCondition = !_.isEmpty(q) ? generateSearchQuery(q, FilterParam.USER) : {};
+
+    const { rows: users, count: total } = await User.scope({
+        method: ['followings', followerId, userId, filter]
+    }).findAndCountAll({
+        order: [[literal(`${sortKey}`), `${sortType}`]],
+        where: { ...searchCondition },
         offset,
         limit
     });
 
-    return ctx.ok({
-        users,
-        _meta: {
-            total,
-            pageCount: Math.ceil(total / limit),
-            currentPage: Math.ceil((offset + 1) / limit) || 1
-        }
-    });
+    return ctx.ok({ users, _meta: pagination(total) });
 };
 
 const create = async ctx => {
-    const { profileId } = ctx.params;
     const { id: userId } = ctx.state.user;
+    const { profileId } = ctx.params;
 
     if (profileId === userId) {
         return ctx.badRequest(ErrorMessages.FOLLOW_PERMISSION);
@@ -96,8 +106,8 @@ const create = async ctx => {
 };
 
 const acceptFollowInvitation = async ctx => {
-    const { followerId } = ctx.params;
     const { id: followingId } = ctx.state.user;
+    const { followerId } = ctx.params;
 
     const isFollowed = await Follow.findOne({ where: { followingId, followerId }, raw: true });
 
@@ -111,8 +121,8 @@ const acceptFollowInvitation = async ctx => {
 };
 
 const declineFollowInvitation = async ctx => {
-    const { followerId } = ctx.params;
     const { id: followingId } = ctx.state.user;
+    const { followerId } = ctx.params;
 
     const isFollowed = await Follow.findOne({ where: { followingId, followerId }, raw: true });
 
@@ -126,8 +136,8 @@ const declineFollowInvitation = async ctx => {
 };
 
 const cancelFollowInvitation = async ctx => {
-    const { id: followerId } = ctx.state.user;
     const { profileId: followingId } = ctx.params;
+    const { id: followerId } = ctx.state.user;
 
     const isFollowed = await Follow.findOne({ where: { followingId, followerId }, raw: true });
 
@@ -143,8 +153,8 @@ const cancelFollowInvitation = async ctx => {
 };
 
 const remove = async ctx => {
-    const { profileId } = ctx.params;
     const { id: userId } = ctx.state.user;
+    const { profileId } = ctx.params;
 
     if (profileId === userId) {
         return ctx.badRequest(ErrorMessages.FOLLOW_PERMISSION);

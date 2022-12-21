@@ -1,7 +1,5 @@
-const bcrypt = require('bcrypt');
-
-const { Admin } = require('../../data/models');
 const ErrorMessages = require('../../constants/ErrorMessages');
+const { Admin } = require('../../data/models');
 
 const create = async ctx => {
     const { firstname, lastname, email, password } = ctx.request.body;
@@ -20,7 +18,7 @@ const login = async ctx => {
 
     const admin = await Admin.findOne({ where: { email } });
 
-    if (!admin || !(await bcrypt.compare(password, admin.password))) {
+    if (!admin || !(await admin.comparePassword(password, admin.password))) {
         return ctx.notFound(ErrorMessages.INVALID_CREDENTIALS);
     }
 

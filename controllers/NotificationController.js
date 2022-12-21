@@ -5,8 +5,6 @@ const { Notification, User } = require('../data/models');
 const findAll = async ctx => {
     const { id: receiverId } = ctx.state.user;
 
-    const { limit, offset } = ctx.state.paginate;
-
     const notifications = await Notification.scope({ method: ['allNotifications', receiverId] }).findAll({ raw: true });
 
     await Notification.update({ isSeen: true }, { where: { receiverId } });
@@ -26,14 +24,7 @@ const findAll = async ctx => {
 
     const total = data.count;
 
-    return (ctx.body = {
-        notifications,
-        _meta: {
-            total,
-            pageCount: Math.ceil(total / limit),
-            currentPage: Math.ceil((offset + 1) / limit) || 1
-        }
-    });
+    return ctx.ok({ notifications, _meta: { total } });
 };
 
 module.exports = { findAll };
