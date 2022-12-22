@@ -8,8 +8,9 @@ const router = new Router({ prefix: '/users' });
 
 router.get('/', auth, acl([UserRole.ADMIN]), UserController.findAll);
 
-router.post('/:id', auth, acl([UserRole.ADMIN]), UserController.activateUser);
+router.post('/export', auth, acl([UserRole.ADMIN]), UserController.exportData);
+router.post('/activate/:id', auth, acl([UserRole.ADMIN]), UserController.activateUser);
 
-router.delete('/:id', auth, acl([UserRole.ADMIN]), UserController.deactivateUser);
+router.delete('/deactivate/:id', auth, acl([UserRole.ADMIN]), UserController.deactivateUser);
 
 module.exports = router;

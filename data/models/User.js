@@ -251,6 +251,24 @@ class User extends Model {
                 where: { ...filterCondition }
             };
         });
+
+        User.addScope('exportForAdmin', filter => {
+            const filterCondition = this.filtration(filter);
+
+            return {
+                attributes: [
+                    `firstname`,
+                    'lastname',
+                    'email',
+                    'status',
+                    'createdAt',
+                    [literal(`(SELECT COUNT('*') FROM post WHERE "userId" = "User"."id")::int`), 'postsCount'],
+                    [literal(`(SELECT COUNT('*') FROM follow WHERE "followingId" = "User"."id")::int`), 'followersCount'],
+                    [literal(`(SELECT COUNT('*') FROM follow WHERE "followerId" = "User"."id")::int`), 'followingsCount']
+                ],
+                where: { ...filterCondition }
+            };
+        });
     }
 
     toJSON() {
