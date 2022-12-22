@@ -72,6 +72,10 @@ class User extends Model {
             filterCondition.profileCategory = profileCategory;
         }
 
+        if (!_.isUndefined(filter.ids)) {
+            filterCondition.id = { [Op.in]: filter.ids };
+        }
+
         return filterCondition;
     }
 

@@ -3,7 +3,7 @@ const { literal } = require('sequelize');
 
 const { Post, Attachment, User, Follow, sequelize, generateSearchQuery } = require('../data/models');
 const { SortParam, SearchParam, ErrorMessages, ImageType } = require('../constants');
-const Cloudinary = require('../components/Cloudinary');
+const Cloudinary = require('../components/cloudinary');
 
 const main = async ctx => {
     const { limit, offset, pagination } = ctx.state.paginate;

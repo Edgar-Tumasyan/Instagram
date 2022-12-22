@@ -3,5 +3,5 @@ module.exports = {
     SortParam: require('./SortParam'),
     SearchParam: require('./SearchParam'),
     ErrorMessages: require('./ErrorMessages'),
-    ExportUserDataType: require('./ExportUsersDataType')
+    ExportDataType: require('./ExportDataType')
 };
