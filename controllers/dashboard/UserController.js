@@ -4,34 +4,9 @@ const { literal } = require('sequelize');
 
 const { SortParam, SearchParam, ErrorMessages } = require('../../constants');
 const { User, generateSearchQuery } = require('../../data/models');
-const exporter = require('../../components/exporter');
+const exporterEXCEL = require('../../components/exporterEXCEL');
+const exporterCSV = require('../../components/exporterCSV');
 const { UserStatus } = require('../../data/lcp');
-
-const exportData = async ctx => {
-    const { q, sortType, sortField, status, profileCategory } = ctx.query;
-    const { limit, offset } = ctx.state.paginate;
-    const { ids } = ctx.request.body;
-
-    const filter = { status, profileCategory, ids };
-
-    const sortKey = SortParam.USER[sortField] ? SortParam.USER[sortField] : SortParam.USER.default;
-
-    const searchCondition = !_.isEmpty(q) ? generateSearchQuery(q, SearchParam.USER) : {};
-
-    const users = await User.scope({ method: ['exportForAdmin', filter] }).findAll({
-        where: { ...searchCondition },
-        order: [[literal(`${sortKey}`), `${sortType}`]],
-        raw: true,
-        offset,
-        limit
-    });
-
-    const filePath = await exporter(users);
-
-    ctx.body = fs.createReadStream(filePath);
-
-    return ctx.attachment(filePath);
-};
 
 const findAll = async ctx => {
     const { q, sortType, sortField, status, profileCategory } = ctx.query;
@@ -87,4 +62,56 @@ const activateUser = async ctx => {
     return ctx.noContent();
 };
 
-module.exports = { findAll, deactivateUser, activateUser, exportData };
+const exportCSV = async ctx => {
+    const { q, sortType, sortField, status, profileCategory } = ctx.query;
+    const { limit, offset } = ctx.state.paginate;
+    const { ids } = ctx.request.body;
+
+    const filter = { status, profileCategory, ids };
+
+    const sortKey = SortParam.USER[sortField] ? SortParam.USER[sortField] : SortParam.USER.default;
+
+    const searchCondition = !_.isEmpty(q) ? generateSearchQuery(q, SearchParam.USER) : {};
+
+    const users = await User.scope({ method: ['exportForAdmin', filter] }).findAll({
+        order: [[literal(`${sortKey}`), `${sortType}`]],
+        where: { ...searchCondition },
+        raw: true,
+        offset,
+        limit
+    });
+
+    const filePath = await exporterCSV(users);
+
+    ctx.body = fs.createReadStream(filePath);
+
+    return ctx.attachment(filePath);
+};
+
+const exportEXCEL = async ctx => {
+    const { q, sortType, sortField, status, profileCategory } = ctx.query;
+    const { limit, offset } = ctx.state.paginate;
+    const { ids } = ctx.request.body;
+
+    const filter = { status, profileCategory, ids };
+
+    const sortKey = SortParam.USER[sortField] ? SortParam.USER[sortField] : SortParam.USER.default;
+
+    const searchCondition = !_.isEmpty(q) ? generateSearchQuery(q, SearchParam.USER) : {};
+
+    const users = await User.scope({ method: ['exportForAdmin', filter] }).findAll({
+        order: [[literal(`${sortKey}`), `${sortType}`]],
+        where: { ...searchCondition },
+        raw: true,
+        offset,
+        limit
+    });
+
+    const filePath = await exporterEXCEL(users);
+
+    ctx.body = fs.createReadStream(filePath);
+
+    return ctx.attachment(filePath);
+};
+
+module.exports = { findAll, deactivateUser, activateUser, exportCSV, exportEXCEL };
