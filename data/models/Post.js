@@ -1,3 +1,4 @@
+const _ = require('lodash');
 const { DataTypes, Model, literal, Op } = require('sequelize');
 
 class Post extends Model {
@@ -18,6 +19,18 @@ class Post extends Model {
         Post.hasMany(models.Attachment, { as: 'attachments', foreignKey: 'postId' });
 
         Post.hasMany(models.Like, { as: 'likes', foreignKey: 'postId' });
+    }
+
+    static filtration(filter) {
+        const { ids } = filter;
+
+        const filterCondition = {};
+
+        if (!_.isUndefined(ids)) {
+            filterCondition.id = { [Op.in]: ids };
+        }
+
+        return filterCondition;
     }
 
     static addScopes(models) {
@@ -155,12 +168,15 @@ class Post extends Model {
             };
         });
 
-        Post.addScope('postsForAdmin', () => {
+        Post.addScope('postsForAdmin', filter => {
+            const filterCondition = this.filtration(filter);
+
             return {
                 attributes: [
                     'id',
                     'title',
                     'description',
+                    'createdAt',
                     [literal(`(SELECT COUNT('*') FROM "like" WHERE "postId" = "Post"."id")::int`), 'likesCount'],
                     [literal(`(SELECT COUNT('*') FROM attachment WHERE "postId" = "Post"."id")::int`), 'attachmentsCount']
                 ],
@@ -172,7 +188,8 @@ class Post extends Model {
                         as: 'attachments',
                         separate: true
                     }
-                ]
+                ],
+                where: { ...filterCondition }
             };
         });
     }

@@ -1,6 +1,6 @@
 const cloudinary = require('cloudinary').v2;
 
-const resizeImage = require('./resizeImage');
+const { resizeImage } = require('./Helpers');
 const config = require('../config');
 
 cloudinary.config(config.cloudinary);

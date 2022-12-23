@@ -3,7 +3,7 @@ const { literal } = require('sequelize');
 
 const { SearchParam, SortParam, ErrorMessages, ImageType } = require('../constants');
 const { User, generateSearchQuery } = require('../data/models');
-const Cloudinary = require('../components/cloudinary');
+const Cloudinary = require('../components/Cloudinary');
 
 const findAll = async ctx => {
     const { q, sortType, sortField, status, profileCategory } = ctx.query;

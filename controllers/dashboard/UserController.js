@@ -4,8 +4,7 @@ const { literal } = require('sequelize');
 
 const { SortParam, SearchParam, ErrorMessages } = require('../../constants');
 const { User, generateSearchQuery } = require('../../data/models');
-const exporterEXCEL = require('../../components/exporterEXCEL');
-const exporterCSV = require('../../components/exporterCSV');
+const { ExportNormalizer } = require('../../components/Helpers');
 const { UserStatus } = require('../../data/lcp');
 
 const findAll = async ctx => {
@@ -81,11 +80,13 @@ const exportCSV = async ctx => {
         limit
     });
 
-    const filePath = await exporterCSV(users);
+    const data = await ExportNormalizer.user(users);
 
-    ctx.body = fs.createReadStream(filePath);
+    const csv = await ExportNormalizer.jsonToCSV(data, 'user');
 
-    return ctx.attachment(filePath);
+    ctx.body = fs.createReadStream(csv);
+
+    return ctx.attachment(csv);
 };
 
 const exportEXCEL = async ctx => {
@@ -107,11 +108,13 @@ const exportEXCEL = async ctx => {
         limit
     });
 
-    const filePath = await exporterEXCEL(users);
+    const data = await ExportNormalizer.user(users);
 
-    ctx.body = fs.createReadStream(filePath);
+    const excel = await ExportNormalizer.jsonToEXCEL(data, 'user');
 
-    return ctx.attachment(filePath);
+    ctx.body = fs.createReadStream(excel);
+
+    return ctx.attachment(excel);
 };
 
 module.exports = { findAll, deactivateUser, activateUser, exportCSV, exportEXCEL };

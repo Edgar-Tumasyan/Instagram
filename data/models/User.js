@@ -60,9 +60,9 @@ class User extends Model {
     }
 
     static filtration(filter) {
-        const filterCondition = {};
+        const { status, profileCategory, ids } = filter;
 
-        const { status, profileCategory } = filter;
+        const filterCondition = {};
 
         if (_.values(UserStatus).includes(status)) {
             filterCondition.status = status;
@@ -72,7 +72,7 @@ class User extends Model {
             filterCondition.profileCategory = profileCategory;
         }
 
-        if (!_.isUndefined(filter.ids)) {
+        if (!_.isUndefined(ids)) {
             filterCondition.id = { [Op.in]: filter.ids };
         }
 

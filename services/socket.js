@@ -1,4 +1,4 @@
-const verifyToken = require('../components/verifyToken');
+const { verifyToken } = require('../components/Helpers');
 
 module.exports = {
     connect: io => {
