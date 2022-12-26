@@ -30,17 +30,11 @@ const homePage = async ctx => {
     const currentYear = new Date().getFullYear();
     const lastYear = new Date().getFullYear() - 1;
 
-    const currentYearUsers = await User.scope({ method: ['homePage', currentYear] }).findAll({ raw: true });
+    const usersHomePage = await User.scope({ method: ['homePage', lastYear, currentYear] }).findAll({ raw: true });
+    const postsHomePage = await Post.scope({ method: ['homePage', lastYear, currentYear] }).findAll({ raw: true });
 
-    const lastYearUsers = await User.scope({ method: ['homePage', lastYear] }).findAll({ raw: true });
-
-    const currentYearPosts = await Post.scope({ method: ['homePage', currentYear] }).findAll({ raw: true });
-
-    const lastYearPosts = await Post.scope({ method: ['homePage', lastYear] }).findAll({ raw: true });
-
-    const users = await Helpers.homePageNormalizer(currentYearUsers, lastYearUsers);
-
-    const posts = await Helpers.homePageNormalizer(currentYearPosts, lastYearPosts);
+    const users = await Helpers.homePageNormalizer(usersHomePage);
+    const posts = await Helpers.homePageNormalizer(postsHomePage);
 
     return ctx.ok({ users, posts });
 };

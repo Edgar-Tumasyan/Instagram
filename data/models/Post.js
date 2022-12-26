@@ -193,14 +193,15 @@ class Post extends Model {
             };
         });
 
-        Post.addScope('homePage', year => {
+        Post.addScope('homePage', (lastYear, currentYear) => {
             return {
                 attributes: [
                     [literal(`to_char("createdAt", 'Mon') `), 'name'],
+                    [literal(`to_char("createdAt", 'yy')`), 'year'],
                     [literal(`Count(*)`), 'month']
                 ],
-                where: { createdAt: { [Op.between]: [`${year}-01-01`, `${year}-12-31`] } },
-                group: 'name'
+                where: { createdAt: { [Op.between]: [`${lastYear}-01-01`, `${currentYear}-12-31`] } },
+                group: ['name', 'year']
             };
         });
     }

@@ -3,10 +3,10 @@ const server = require('http').createServer(app.callback());
 const { Server } = require('socket.io');
 const io = new Server(server, { cors: { origin: '*' } });
 
-const config = require('./config');
-const v1Routes = require('./routes');
-const socket = require('./services/socket');
 const dashboardRoutes = require('./routes/dashboard');
+const socket = require('./services/socket');
+const v1Routes = require('./routes');
+const config = require('./config');
 
 const port = config.PORT || 3000;
 
