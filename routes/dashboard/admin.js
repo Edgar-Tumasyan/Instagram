@@ -6,6 +6,8 @@ const { UserRole } = require('../../data/lcp');
 
 const router = new Router({ prefix: '/admin' });
 
+router.get('/', auth, acl([UserRole.ADMIN]), AdminController.homePage);
+
 router.post('/login', AdminController.login);
 router.post('/', auth, acl([UserRole.ADMIN]), AdminController.create);
 

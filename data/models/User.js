@@ -273,6 +273,17 @@ class User extends Model {
                 where: { ...filterCondition }
             };
         });
+
+        User.addScope('homePage', year => {
+            return {
+                attributes: [
+                    [literal(`to_char("createdAt", 'Mon') `), 'name'],
+                    [literal(`Count(*)`), 'month']
+                ],
+                where: { createdAt: { [Op.between]: [`${year}-01-01`, `${year}-12-31`] } },
+                group: 'name'
+            };
+        });
     }
 
     toJSON() {
