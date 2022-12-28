@@ -4,6 +4,8 @@ module.exports = {
     ALLOWED_POST: 'Posts of this user can see only followers',
     AUTHORIZE_PERMISSIONS: 'Unauthorized to access this route',
 
+    CHANGE_PASSWORD: 'Please provide your old password and new password',
+
     EXISTING_EMAIL: 'Email already exist',
     EXISTING_LIKE: 'You already like this post',
     EXISTING_DECLINE_REQUEST: 'User decline your request invitation',
@@ -11,6 +13,7 @@ module.exports = {
 
     FOLLOW_APPROVED: 'You already follow user with id',
     FOLLOW_PERMISSION: `You can't follow or unfollow your account`,
+    FORGOT_PASSWORD_INCORRECT_EMAIL: 'Please provide correct email',
     FOLLOW_PENDING: 'You have already sent request to follow user with id',
     FOLLOW_REQUEST: 'User cancel follow invitation or you already accepted it',
     FOLLOW_INVITATION_CANCEL: `You don't sent follow invitation or user cancel your follow invitation`,

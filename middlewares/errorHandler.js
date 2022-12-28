@@ -41,6 +41,14 @@ module.exports = () => async (ctx, next) => {
             return ctx.unprocessable_entity(ErrorMessages.UNPROCESSABLE_ENTITY);
         }
 
+        if (err.name === 'TokenExpiredError') {
+            const message = 'Your token has expired';
+
+            errors.push({ message });
+
+            return ctx.unauthorized({ message: 'TokenExpiredError', errors });
+        }
+
         return ctx.internalServerError();
     }
 };

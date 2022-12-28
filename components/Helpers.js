@@ -101,16 +101,6 @@ class ExportNormalizer {
     }
 }
 
-const resizeImage = async file => {
-    const filePath = `${os.tmpdir()}\\${file.key}`;
-
-    await sharp(file.path).rotate().resize(200, 200).jpeg({ mozjpeg: true }).toFile(filePath);
-
-    return filePath;
-};
-
-const verifyToken = async token => jwt.verify(token, config.JWT_SECRET);
-
 const homePageNormalizer = async homePageData => {
     const currentYear = {};
     const lastYear = {};
@@ -182,4 +172,20 @@ const homePageDataNormalizer = async (currentYear, lastYear) => {
     return result;
 };
 
-module.exports = { ExportNormalizer, verifyToken, resizeImage, homePageNormalizer };
+const resizeImage = async file => {
+    const filePath = `${os.tmpdir()}\\${file.key}`;
+
+    await sharp(file.path).rotate().resize(200, 200).jpeg({ mozjpeg: true }).toFile(filePath);
+
+    return filePath;
+};
+
+const verifyToken = async (token, jwtSecret) => jwt.verify(token, jwtSecret);
+
+const passwordToken = async user => {
+    const { id, email, role } = user;
+
+    return jwt.sign({ id, email, role }, config.JWT_SECRET_RESET_PASSWORD, { expiresIn: config.EXPIRES_IN_RESET_PASSWORD });
+};
+
+module.exports = { ExportNormalizer, verifyToken, resizeImage, homePageNormalizer, passwordToken };

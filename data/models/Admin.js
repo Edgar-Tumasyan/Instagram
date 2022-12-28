@@ -13,9 +13,10 @@ class Admin extends Model {
                 firstname: { type: DataTypes.STRING, allowNull: false, validate: { len: { args: [3, 12] } } },
                 lastname: { type: DataTypes.STRING, allowNull: false, validate: { len: { args: [3, 12] } } },
                 email: { type: DataTypes.STRING, allowNull: false, unique: true, validate: { isEmail: true } },
-                password: { type: DataTypes.STRING, allowNull: false, validate: { len: { args: [6, 14] } } },
+                password: { type: DataTypes.STRING, allowNull: false, validate: { len: { args: [6, 65] } } },
                 avatar: DataTypes.STRING,
-                avatarPublicId: DataTypes.STRING
+                avatarPublicId: DataTypes.STRING,
+                passwordToken: DataTypes.STRING
             },
             {
                 sequelize,
@@ -43,7 +44,7 @@ class Admin extends Model {
     toJSON() {
         const admin = this.get();
 
-        const hiddenFields = ['password'];
+        const hiddenFields = ['password', 'passwordToken'];
 
         return _.omit(admin, hiddenFields);
     }

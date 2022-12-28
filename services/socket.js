@@ -1,5 +1,7 @@
 const { verifyToken } = require('../components/Helpers');
 
+const config = require('../config');
+
 module.exports = {
     connect: io => {
         global.io = io;
@@ -11,7 +13,7 @@ module.exports = {
                 return next(new Error('Authentication failed'));
             }
 
-            const payload = await verifyToken(token);
+            const payload = await verifyToken(token, config.JWT_SECRET);
 
             if (!payload) {
                 return next(new Error('Authentication failed'));

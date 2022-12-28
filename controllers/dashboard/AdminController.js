@@ -1,6 +1,9 @@
+const _ = require('lodash');
+
 const ErrorMessages = require('../../constants/ErrorMessages');
 const { Admin, User, Post } = require('../../data/models');
-const Helpers = require('../../components/Helpers');
+const { Helpers, SendEmail } = require('../../components');
+const config = require('../../config');
 
 const create = async ctx => {
     const { firstname, lastname, email, password } = ctx.request.body;
@@ -39,4 +42,72 @@ const homePage = async ctx => {
     return ctx.ok({ users, posts });
 };
 
-module.exports = { login, create, homePage };
+/// //////////////////////////////////
+const forgotPassword = async ctx => {
+    const { email: userEmail } = ctx.state.user;
+    const { email } = ctx.request.body;
+
+    const user = await User.findOne({ where: { email } });
+
+    if (!user || email !== userEmail) {
+        return ctx.badRequest(ErrorMessages.FORGOT_PASSWORD_INCORRECT_EMAIL);
+    }
+
+    const passwordToken = await Helpers.passwordToken(user);
+    const resetUrl = `${config.API_URL}/users/reset-password?email=${email}&token=${passwordToken}`;
+
+    await SendEmail(email, config.SENDER_EMAIL, resetUrl, 'Reset Password');
+
+    user.passwordToken = passwordToken;
+
+    await user.save();
+
+    return ctx.ok({ message: 'Please check your email for reset password link', resetUrl });
+};
+
+const resetPassword = async ctx => {
+    const { password } = ctx.request.body;
+    const { email, token } = ctx.query;
+
+    const user = await User.findOne({ where: { email } });
+
+    if (
+        !email ||
+        !token ||
+        !password ||
+        _.isNull(user.dataValues.passwordToken) ||
+        !(await Helpers.verifyToken(token, config.JWT_SECRET_RESET_PASSWORD))
+    ) {
+        return ctx.unauthorized(ErrorMessages.UNPROCESSABLE_ENTITY);
+    }
+
+    user.password = password;
+    user.passwordToken = null;
+
+    await user.save();
+
+    return ctx.created({ user });
+};
+
+const changePassword = async ctx => {
+    const { oldPassword, newPassword } = ctx.request.body;
+    const { id } = ctx.state.user;
+
+    if (!oldPassword || !newPassword) {
+        return ctx.badRequest(ErrorMessages.CHANGE_PASSWORD);
+    }
+
+    const user = await User.findByPk(id);
+
+    if (!user || !(await user.comparePassword(oldPassword, user.dataValues.password))) {
+        return ctx.notFound(ErrorMessages.INVALID_CREDENTIALS);
+    }
+
+    user.password = newPassword;
+
+    await user.save();
+
+    return ctx.created({ user });
+};
+
+module.exports = { login, create, homePage, forgotPassword, resetPassword, changePassword };

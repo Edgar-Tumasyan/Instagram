@@ -14,7 +14,7 @@ class User extends Model {
                 firstname: { type: DataTypes.STRING, allowNull: false, validate: { len: { args: [3, 12] } } },
                 lastname: { type: DataTypes.STRING, allowNull: false, validate: { len: { args: [3, 12] } } },
                 email: { type: DataTypes.STRING, allowNull: false, unique: true, validate: { isEmail: true } },
-                password: { type: DataTypes.STRING, allowNull: false, validate: { len: { args: [6, 14] } } },
+                password: { type: DataTypes.STRING, allowNull: false, validate: { len: { args: [6, 65] } } },
                 role: { type: DataTypes.ENUM, values: _.values(UserRole), defaultValue: UserRole.USER },
                 status: { type: DataTypes.ENUM, allowNull: false, values: _.values(UserStatus), defaultValue: UserStatus.Active },
                 profileCategory: {
@@ -23,7 +23,8 @@ class User extends Model {
                     defaultValue: ProfileCategory.PUBLIC
                 },
                 avatar: DataTypes.STRING,
-                avatarPublicId: DataTypes.STRING
+                avatarPublicId: DataTypes.STRING,
+                passwordToken: DataTypes.STRING
             },
 
             {
@@ -32,6 +33,9 @@ class User extends Model {
                 tableName: 'user',
                 hooks: {
                     beforeCreate: async user => {
+                        user.password = await bcrypt.hash(user.password, 10);
+                    },
+                    beforeSave: async user => {
                         user.password = await bcrypt.hash(user.password, 10);
                     }
                 }
@@ -290,7 +294,7 @@ class User extends Model {
     toJSON() {
         const user = this.get();
 
-        const hiddenFields = ['password'];
+        const hiddenFields = ['password', 'passwordToken'];
 
         return _.omit(user, hiddenFields);
     }

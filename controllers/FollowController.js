@@ -141,9 +141,7 @@ const cancelFollowInvitation = async ctx => {
     const isFollowed = await Follow.findOne({ where: { followingId, followerId }, raw: true });
 
     if (!isFollowed) {
-        return ctx.badRequest({
-            message: `You don't sent follow invitation user with id: ${followingId} or user cancel your follow invitation`
-        });
+        return ctx.badRequest(ErrorMessages.FOLLOW_INVITATION_CANCEL);
     }
 
     await Follow.destroy({ where: { followerId, followingId } });
