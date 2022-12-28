@@ -1,13 +1,13 @@
 const ErrorMessages = require('../constants/ErrorMessages');
 
-const authorizePermissions = async (ctx, next) => {
+const acl = roles => async (ctx, next) => {
     const { tokenType: role } = ctx.state.user;
 
-    if (!role.includes('admin')) {
+    if (!roles.includes(role)) {
         return ctx.forbidden(ErrorMessages.AUTHORIZE_PERMISSIONS);
     }
 
     await next();
 };
 
-module.exports = authorizePermissions;
+module.exports = acl;

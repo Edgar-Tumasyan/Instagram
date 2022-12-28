@@ -1,31 +1,35 @@
 const _ = require('lodash');
-const bcrypt = require('bcrypt');
+const { literal } = require('sequelize');
 
-const { User } = require('../data/models');
-const avatarType = require('../constants/imageType');
-const Cloudinary = require('../components/Cloudinary');
-const ErrorMessages = require('../constants/ErrorMessages');
+const { SearchParam, SortParam, ErrorMessages, ImageType } = require('../constants');
+const { Cloudinary, SendEmail, Helpers } = require('../components');
+const { User, generateSearchQuery } = require('../data/models');
+const config = require('../config');
 
 const findAll = async ctx => {
+    const { q, sortType, sortField, status, profileCategory } = ctx.query;
+    const { limit, offset, pagination } = ctx.state.paginate;
     const { id: userId } = ctx.state.user;
 
-    const { limit, offset } = ctx.state.paginate;
+    const filter = { status, profileCategory };
 
-    const { rows: users, count: total } = await User.scope({ method: ['profiles', userId] }).findAndCountAll({ offset, limit });
+    const sortKey = SortParam.USER[sortField] ? SortParam.USER[sortField] : SortParam.USER.default;
 
-    return ctx.ok({
-        users,
-        _meta: {
-            total,
-            pageCount: Math.ceil(total / limit),
-            currentPage: Math.ceil((offset + 1) / limit) || 1
-        }
+    const searchCondition = !_.isEmpty(q) ? generateSearchQuery(q, SearchParam.USER) : {};
+
+    const { rows: users, count: total } = await User.scope({ method: ['profiles', userId, filter] }).findAndCountAll({
+        order: [[literal(`${sortKey}`), `${sortType}`]],
+        where: { ...searchCondition },
+        offset,
+        limit
     });
+
+    return ctx.ok({ users, _meta: pagination(total) });
 };
 
 const findOne = async ctx => {
-    const { id: userId } = ctx.state.user;
     const { id: profileId } = ctx.request.params;
+    const { id: userId } = ctx.state.user;
 
     const user = await User.scope({ method: ['profile', profileId, userId] }).findByPk(profileId);
 
@@ -53,7 +57,7 @@ const login = async ctx => {
 
     const user = await User.findOne({ where: { email } });
 
-    if (!user || !(await bcrypt.compare(password, user.password))) {
+    if (!user || !(await user.comparePassword(password, user.password))) {
         return ctx.notFound(ErrorMessages.INVALID_CREDENTIALS);
     }
 
@@ -71,7 +75,7 @@ const uploadAvatar = async ctx => {
         return ctx.badRequest(ErrorMessages.MANY_AVATARS);
     }
 
-    if (!avatarType.includes(reqAvatar.ext)) {
+    if (!ImageType.includes(reqAvatar.ext)) {
         return ctx.badRequest(ErrorMessages.AVATAR_TYPE);
     }
 
@@ -87,13 +91,13 @@ const uploadAvatar = async ctx => {
 };
 
 const changeProfileCategory = async ctx => {
-    const { id } = ctx.state.user;
-
     const { profileCategory } = ctx.request.body;
 
     if (!profileCategory) {
         return ctx.badRequest(ErrorMessages.PROFILE_CATEGORY);
     }
+
+    const { id } = ctx.state.user;
 
     await User.update({ profileCategory }, { where: { id } });
 
@@ -120,6 +124,73 @@ const remove = async ctx => {
     return ctx.noContent();
 };
 
+const forgotPassword = async ctx => {
+    const { email: userEmail } = ctx.state.user;
+    const { email } = ctx.request.body;
+
+    const user = await User.findOne({ where: { email } });
+
+    if (!user || email !== userEmail) {
+        return ctx.badRequest(ErrorMessages.FORGOT_PASSWORD_INCORRECT_EMAIL);
+    }
+
+    const passwordToken = await Helpers.passwordToken(user);
+    const resetUrl = `${config.API_URL}/users/reset-password?email=${email}&token=${passwordToken}`;
+
+    await SendEmail(email, config.SENDER_EMAIL, resetUrl, 'Reset Password');
+
+    user.passwordToken = passwordToken;
+
+    await user.save();
+
+    return ctx.ok({ message: 'Please check your email for reset password link', resetUrl });
+};
+
+const resetPassword = async ctx => {
+    const { password } = ctx.request.body;
+    const { email, token } = ctx.query;
+
+    const user = await User.findOne({ where: { email } });
+
+    if (
+        !email ||
+        !token ||
+        !password ||
+        _.isNull(user.dataValues.passwordToken) ||
+        !(await Helpers.verifyToken(token, config.JWT_SECRET_RESET_PASSWORD))
+    ) {
+        return ctx.unauthorized(ErrorMessages.UNPROCESSABLE_ENTITY);
+    }
+
+    user.password = password;
+    user.passwordToken = null;
+
+    await user.save();
+
+    return ctx.created({ user });
+};
+
+const changePassword = async ctx => {
+    const { oldPassword, newPassword } = ctx.request.body;
+    const { id } = ctx.state.user;
+
+    if (!oldPassword || !newPassword) {
+        return ctx.badRequest(ErrorMessages.CHANGE_PASSWORD);
+    }
+
+    const user = await User.findByPk(id);
+
+    if (!user || !(await user.comparePassword(oldPassword, user.dataValues.password))) {
+        return ctx.notFound(ErrorMessages.INVALID_CREDENTIALS);
+    }
+
+    user.password = newPassword;
+
+    await user.save();
+
+    return ctx.created({ user });
+};
+
 module.exports = {
     login,
     create,
@@ -127,5 +198,8 @@ module.exports = {
     findAll,
     findOne,
     uploadAvatar,
+    resetPassword,
+    forgotPassword,
+    changePassword,
     changeProfileCategory
 };

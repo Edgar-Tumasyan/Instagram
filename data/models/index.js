@@ -32,7 +32,6 @@ for (const model of Object.keys(models)) {
     };
 }
 
-/// //
 models.generateSearchQuery = (string, fields = ['firstName', 'lastName']) => {
     const permArr = [];
     const newArray = [];

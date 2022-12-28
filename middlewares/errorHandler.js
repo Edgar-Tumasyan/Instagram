@@ -12,7 +12,9 @@ module.exports = () => async (ctx, next) => {
             const field = err.parent.constraint.split('_')[1];
             const message = `${field} already exist`;
 
-            return ctx.unprocessable_entity({ field, message });
+            errors.push({ field, message });
+
+            return ctx.unprocessable_entity({ message: 'UniqueConstraintError', errors });
         }
 
         if (err.name === 'SequelizeValidationError') {
@@ -37,6 +39,14 @@ module.exports = () => async (ctx, next) => {
 
         if (err.name === 'SequelizeDatabaseError') {
             return ctx.unprocessable_entity(ErrorMessages.UNPROCESSABLE_ENTITY);
+        }
+
+        if (err.name === 'TokenExpiredError') {
+            const message = 'Your token has expired';
+
+            errors.push({ message });
+
+            return ctx.unauthorized({ message: 'TokenExpiredError', errors });
         }
 
         return ctx.internalServerError();

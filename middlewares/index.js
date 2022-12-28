@@ -1,4 +1,7 @@
-const auth = require('./auth');
-const authorizePermissions = require('./authtorizePermissions');
-
-module.exports = { auth, authorizePermissions };
+module.exports = {
+    acl: require('./acl'),
+    auth: require('./auth'),
+    ordering: require('./ordering'),
+    pagination: require('./pagination'),
+    errorHandler: require('./errorHandler')
+};

@@ -1,3 +1,4 @@
+const { DataTypes } = require('sequelize');
 module.exports = {
     async up(queryInterface, Sequelize) {
         await queryInterface.createTable('admin', {
@@ -5,9 +6,10 @@ module.exports = {
             firstname: { type: Sequelize.STRING, allowNull: false, validate: { len: { args: [3, 12] } } },
             lastname: { type: Sequelize.STRING, allowNull: false, validate: { len: { args: [3, 12] } } },
             email: { type: Sequelize.STRING, allowNull: false, unique: true, validate: { isEmail: true } },
-            password: { type: Sequelize.STRING, allowNull: false, validate: { len: { args: [6, 14] } } },
+            password: { type: Sequelize.STRING, allowNull: false, validate: { len: { args: [6, 65] } } },
             avatar: { type: Sequelize.STRING },
             avatarPublicId: { type: Sequelize.STRING },
+            passwordToken: { type: Sequelize.STRING },
             createdAt: { allowNull: false, type: Sequelize.DATE },
             updatedAt: { allowNull: false, type: Sequelize.DATE }
         });

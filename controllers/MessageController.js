@@ -1,9 +1,9 @@
-const ErrorMessages = require('../constants/ErrorMessages');
 const { Follow, Message, Thread, ThreadRequest, ThreadUser, sequelize } = require('../data/models');
+const ErrorMessages = require('../constants/ErrorMessages');
 
 const create = async ctx => {
-    const { id: userId } = ctx.state.user;
     const { threadId, profileId } = ctx.params;
+    const { id: userId } = ctx.state.user;
 
     const threadUser = await ThreadUser.findOne({ where: { threadId, userId }, raw: true });
 

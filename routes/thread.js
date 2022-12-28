@@ -1,7 +1,7 @@
 const Router = require('koa-router');
 
-const auth = require('../middlewares/auth');
 const ThreadController = require('../controllers/ThreadController');
+const auth = require('../middlewares/auth');
 
 const router = new Router({ prefix: '/thread' });
 

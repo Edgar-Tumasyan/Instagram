@@ -9,12 +9,13 @@ module.exports = {
             firstname: { type: Sequelize.STRING, allowNull: false, validate: { len: { args: [3, 12] } } },
             lastname: { type: Sequelize.STRING, allowNull: false, validate: { len: { args: [3, 12] } } },
             email: { type: Sequelize.STRING, allowNull: false, unique: true, validate: { isEmail: true } },
-            password: { type: Sequelize.STRING, allowNull: false, validate: { len: { args: [6, 14] } } },
+            password: { type: Sequelize.STRING, allowNull: false, validate: { len: { args: [6, 65] } } },
             role: { allowNull: false, type: Sequelize.ENUM, values: _.values(UserRole), defaultValue: UserRole.USER },
             status: { type: Sequelize.ENUM, allowNull: false, values: _.values(UserStatus), defaultValue: UserStatus.Active },
             avatar: { type: Sequelize.STRING },
             avatarPublicId: { type: Sequelize.STRING },
             profileCategory: { type: Sequelize.ENUM, values: _.values(ProfileCategory), defaultValue: ProfileCategory.PUBLIC },
+            passwordToken: { type: Sequelize.STRING },
             createdAt: { allowNull: false, type: Sequelize.DATE },
             updatedAt: { allowNull: false, type: Sequelize.DATE }
         });

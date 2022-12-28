@@ -1,3 +1,4 @@
+const _ = require('lodash');
 const { DataTypes, Model, literal, Op } = require('sequelize');
 
 class Post extends Model {
@@ -18,6 +19,18 @@ class Post extends Model {
         Post.hasMany(models.Attachment, { as: 'attachments', foreignKey: 'postId' });
 
         Post.hasMany(models.Like, { as: 'likes', foreignKey: 'postId' });
+    }
+
+    static filtration(filter) {
+        const { ids } = filter;
+
+        const filterCondition = {};
+
+        if (!_.isUndefined(ids)) {
+            filterCondition.id = { [Op.in]: ids };
+        }
+
+        return filterCondition;
     }
 
     static addScopes(models) {
@@ -59,11 +72,7 @@ class Post extends Model {
                     [literal(`(SELECT COUNT('*') FROM "attachment" WHERE "postId" = "Post"."id")::int`), 'attachmentsCount']
                 ],
                 include: [
-                    {
-                        attributes: ['id', 'firstname', 'lastname'],
-                        model: models.User,
-                        as: 'user'
-                    },
+                    { attributes: ['id', 'firstname', 'lastname'], model: models.User, as: 'user' },
                     {
                         attributes: ['id', 'attachmentUrl', 'attachmentPublicId'],
                         model: models.Attachment,
@@ -156,6 +165,43 @@ class Post extends Model {
                     }
                 ],
                 where: { userId: { [Op.in]: followedUsers } }
+            };
+        });
+
+        Post.addScope('postsForAdmin', filter => {
+            const filterCondition = this.filtration(filter);
+
+            return {
+                attributes: [
+                    'id',
+                    'title',
+                    'description',
+                    'createdAt',
+                    [literal(`(SELECT COUNT('*') FROM "like" WHERE "postId" = "Post"."id")::int`), 'likesCount'],
+                    [literal(`(SELECT COUNT('*') FROM attachment WHERE "postId" = "Post"."id")::int`), 'attachmentsCount']
+                ],
+                include: [
+                    { attributes: ['id', 'firstname', 'lastname'], model: models.User, as: 'user' },
+                    {
+                        attributes: ['id', 'attachmentUrl', 'attachmentPublicId'],
+                        model: models.Attachment,
+                        as: 'attachments',
+                        separate: true
+                    }
+                ],
+                where: { ...filterCondition }
+            };
+        });
+
+        Post.addScope('homePage', (lastYear, currentYear) => {
+            return {
+                attributes: [
+                    [literal(`to_char("createdAt", 'Mon') `), 'name'],
+                    [literal(`to_char("createdAt", 'yy')`), 'year'],
+                    [literal(`Count(*)`), 'month']
+                ],
+                where: { createdAt: { [Op.between]: [`${lastYear}-01-01`, `${currentYear}-12-31`] } },
+                group: ['name', 'year']
             };
         });
     }

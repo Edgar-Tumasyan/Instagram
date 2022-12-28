@@ -1,29 +1,23 @@
-const ErrorMessages = require('../constants/ErrorMessages');
 const { Follow, Thread, ThreadRequest, ThreadUser, sequelize } = require('../data/models');
+const ErrorMessages = require('../constants/ErrorMessages');
 
 const findAll = async ctx => {
+    const { limit, offset, pagination } = ctx.state.paginate;
     const { id: userId } = ctx.state.user;
 
-    const { limit, offset } = ctx.state.paginate;
-
-    const { rows: threads, count: total } = await Thread.scope({ method: ['allThreads', userId] }).findAndCountAll({
+    const { rows: threads, count: total } = await Thread.scope({
+        method: ['allThreads', userId]
+    }).findAndCountAll({
         offset,
         limit
     });
 
-    return ctx.ok({
-        threads,
-        _meta: {
-            total,
-            pageCount: Math.ceil(total / limit),
-            currentPage: Math.ceil((offset + 1) / limit) || 1
-        }
-    });
+    return ctx.ok({ threads, _meta: pagination(total) });
 };
 
 const create = async ctx => {
-    const { profileId } = ctx.params;
     const { id: userId } = ctx.state.user;
+    const { profileId } = ctx.params;
 
     if (userId === profileId) {
         return ctx.badRequest(ErrorMessages.NO_CREATE_THREAD);

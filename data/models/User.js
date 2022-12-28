@@ -3,8 +3,8 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { DataTypes, Model, literal, Op } = require('sequelize');
 
-const config = require('../../config');
 const { UserRole, ProfileCategory, UserStatus } = require('../lcp');
+const config = require('../../config');
 
 class User extends Model {
     static init(sequelize) {
@@ -14,7 +14,7 @@ class User extends Model {
                 firstname: { type: DataTypes.STRING, allowNull: false, validate: { len: { args: [3, 12] } } },
                 lastname: { type: DataTypes.STRING, allowNull: false, validate: { len: { args: [3, 12] } } },
                 email: { type: DataTypes.STRING, allowNull: false, unique: true, validate: { isEmail: true } },
-                password: { type: DataTypes.STRING, allowNull: false, validate: { len: { args: [6, 14] } } },
+                password: { type: DataTypes.STRING, allowNull: false, validate: { len: { args: [6, 65] } } },
                 role: { type: DataTypes.ENUM, values: _.values(UserRole), defaultValue: UserRole.USER },
                 status: { type: DataTypes.ENUM, allowNull: false, values: _.values(UserStatus), defaultValue: UserStatus.Active },
                 profileCategory: {
@@ -23,16 +23,19 @@ class User extends Model {
                     defaultValue: ProfileCategory.PUBLIC
                 },
                 avatar: DataTypes.STRING,
-                avatarPublicId: DataTypes.STRING
+                avatarPublicId: DataTypes.STRING,
+                passwordToken: DataTypes.STRING
             },
 
             {
                 sequelize,
                 timestamps: true,
                 tableName: 'user',
-
                 hooks: {
                     beforeCreate: async user => {
+                        user.password = await bcrypt.hash(user.password, 10);
+                    },
+                    beforeSave: async user => {
                         user.password = await bcrypt.hash(user.password, 10);
                     }
                 }
@@ -54,6 +57,30 @@ class User extends Model {
         const { id, email, role } = this;
 
         return jwt.sign({ id, email, role }, config.JWT_SECRET, { expiresIn: config.EXPIRES_IN });
+    }
+
+    async comparePassword(password, userPassword) {
+        return await bcrypt.compare(password, userPassword);
+    }
+
+    static filtration(filter) {
+        const { status, profileCategory, ids } = filter;
+
+        const filterCondition = {};
+
+        if (_.values(UserStatus).includes(status)) {
+            filterCondition.status = status;
+        }
+
+        if (_.values(ProfileCategory).includes(profileCategory)) {
+            filterCondition.profileCategory = profileCategory;
+        }
+
+        if (!_.isUndefined(ids)) {
+            filterCondition.id = { [Op.in]: filter.ids };
+        }
+
+        return filterCondition;
     }
 
     static addScopes(models) {
@@ -83,7 +110,9 @@ class User extends Model {
             };
         });
 
-        User.addScope('profiles', userId => {
+        User.addScope('profiles', (userId, filter) => {
+            const filterCondition = this.filtration(filter);
+
             return {
                 attributes: [
                     'id',
@@ -103,11 +132,13 @@ class User extends Model {
                         'followStatus'
                     ]
                 ],
-                where: { id: { [Op.not]: userId } }
+                where: { id: { [Op.not]: userId }, ...filterCondition }
             };
         });
 
-        User.addScope('followers', (followingId, userId) => {
+        User.addScope('followers', (followingId, userId, filter) => {
+            const filterCondition = this.filtration(filter);
+
             return {
                 attributes: [
                     'id',
@@ -129,12 +160,15 @@ class User extends Model {
                     ]
                 ],
                 where: {
+                    ...filterCondition,
                     id: { [Op.in]: models.Follow.generateNestedQuery({ attributes: ['followerId'], where: { followingId } }) }
                 }
             };
         });
 
-        User.addScope('followings', (followerId, userId) => {
+        User.addScope('followings', (followerId, userId, filter) => {
+            const filterCondition = this.filtration(filter);
+
             return {
                 attributes: [
                     'id',
@@ -156,12 +190,15 @@ class User extends Model {
                     ]
                 ],
                 where: {
+                    ...filterCondition,
                     id: { [Op.in]: models.Follow.generateNestedQuery({ attributes: ['followingId'], where: { followerId } }) }
                 }
             };
         });
 
-        User.addScope('likesUsers', (postId, userId) => {
+        User.addScope('likesUsers', (postId, userId, filter) => {
+            const filterCondition = this.filtration(filter);
+
             return {
                 attributes: [
                     'id',
@@ -183,9 +220,8 @@ class User extends Model {
                     ]
                 ],
                 where: {
-                    id: {
-                        [Op.in]: models.Like.generateNestedQuery({ attributes: ['userId'], where: { postId } })
-                    }
+                    ...filterCondition,
+                    id: { [Op.in]: models.Like.generateNestedQuery({ attributes: ['userId'], where: { postId } }) }
                 }
             };
         });
@@ -205,20 +241,52 @@ class User extends Model {
             };
         });
 
-        User.addScope('usersForAdmin', (q, sortField, sortType, status) => {
+        User.addScope('usersForAdmin', filter => {
+            const filterCondition = this.filtration(filter);
+
             return {
                 attributes: [
                     'id',
                     'firstname',
                     'lastname',
                     'avatar',
+                    'createdAt',
                     'status',
                     [literal(`(SELECT COUNT('*') FROM post WHERE "userId" = "User"."id")::int`), 'postsCount'],
                     [literal(`(SELECT COUNT('*') FROM follow WHERE "followingId" = "User"."id")::int`), 'followersCount'],
                     [literal(`(SELECT COUNT('*') FROM follow WHERE "followerId" = "User"."id")::int`), 'followingsCount']
                 ],
-                where: { status, [Op.or]: [{ firstname: { [Op.like]: `%${q}%` } }, { lastname: { [Op.like]: `%${q}%` } }] },
-                order: [[`${sortField}`, `${sortType}`]]
+                where: { ...filterCondition }
+            };
+        });
+
+        User.addScope('exportForAdmin', filter => {
+            const filterCondition = this.filtration(filter);
+
+            return {
+                attributes: [
+                    `firstname`,
+                    'lastname',
+                    'email',
+                    'status',
+                    'createdAt',
+                    [literal(`(SELECT COUNT('*') FROM post WHERE "userId" = "User"."id")::int`), 'postsCount'],
+                    [literal(`(SELECT COUNT('*') FROM follow WHERE "followingId" = "User"."id")::int`), 'followersCount'],
+                    [literal(`(SELECT COUNT('*') FROM follow WHERE "followerId" = "User"."id")::int`), 'followingsCount']
+                ],
+                where: { ...filterCondition }
+            };
+        });
+
+        User.addScope('homePage', (lastYear, currentYear) => {
+            return {
+                attributes: [
+                    [literal(`to_char("createdAt", 'Mon') `), 'name'],
+                    [literal(`to_char("createdAt", 'yy')`), 'year'],
+                    [literal(`Count(*)`), 'month']
+                ],
+                where: { createdAt: { [Op.between]: [`${lastYear}-01-01`, `${currentYear}-12-31`] } },
+                group: ['name', 'year']
             };
         });
     }
@@ -226,7 +294,7 @@ class User extends Model {
     toJSON() {
         const user = this.get();
 
-        const hiddenFields = ['password'];
+        const hiddenFields = ['password', 'passwordToken'];
 
         return _.omit(user, hiddenFields);
     }
