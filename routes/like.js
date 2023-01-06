@@ -1,14 +1,14 @@
 const Router = require('koa-router');
 
-const LikeController = require('../controllers/LikeController');
+const LikeHandler = require('../handlers/LikeHandler');
 const auth = require('../middlewares/auth');
 
 const router = new Router({ prefix: '/posts/:postId/likes' });
 
-router.get('/users', auth, LikeController.postLikesUsers);
+router.get('/users', auth, LikeHandler.postLikesUsers);
 
-router.post('/', auth, LikeController.create);
+router.post('/', auth, LikeHandler.create);
 
-router.delete('/', auth, LikeController.remove);
+router.delete('/', auth, LikeHandler.remove);
 
 module.exports = router;

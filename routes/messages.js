@@ -1,10 +1,10 @@
 const Router = require('koa-router');
 
-const MessageController = require('../controllers/MessageController');
+const MessageHandler = require('../handlers/MessageHandler');
 const auth = require('../middlewares/auth');
 
 const router = new Router({ prefix: '/messages' });
 
-router.post('/:threadId/:profileId', auth, MessageController.create);
+router.post('/:threadId/:profileId', auth, MessageHandler.create);
 
 module.exports = router;

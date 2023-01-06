@@ -1,12 +1,12 @@
 const Router = require('koa-router');
 
-const ThreadController = require('../controllers/ThreadController');
+const ThreadHandler = require('../handlers/ThreadHandler');
 const auth = require('../middlewares/auth');
 
-const router = new Router({ prefix: '/thread' });
+const router = new Router({ prefix: '/threads' });
 
-router.get('/', auth, ThreadController.findAll);
+router.get('/', auth, ThreadHandler.findAll);
 
-router.post('/:profileId', auth, ThreadController.create);
+router.post('/', auth, ThreadHandler.create);
 
 module.exports = router;

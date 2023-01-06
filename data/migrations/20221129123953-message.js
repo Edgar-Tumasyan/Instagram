@@ -5,8 +5,8 @@ module.exports = {
             text: { type: Sequelize.TEXT, allowNull: false },
             userId: { type: Sequelize.UUID, allowNull: false, references: { model: 'user', key: 'id' }, onDelete: 'Cascade' },
             threadId: { type: Sequelize.UUID, allowNull: false, references: { model: 'thread', key: 'id' }, onDelete: 'Cascade' },
-            createdAt: { allowNull: false, type: Sequelize.DATE },
-            updatedAt: { allowNull: false, type: Sequelize.DATE }
+            createdAt: { type: Sequelize.DATE, allowNull: false },
+            updatedAt: { type: Sequelize.DATE, allowNull: false }
         });
 
         await queryInterface.addColumn('thread', 'lastMessageId', {

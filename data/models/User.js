@@ -3,7 +3,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { DataTypes, Model, literal, Op } = require('sequelize');
 
-const { UserRole, ProfileCategory, UserStatus } = require('../lcp');
+const { UserRole, ProfileCategory, UserStatus, FollowStatus } = require('../lcp');
 const config = require('../../config');
 
 class User extends Model {
@@ -22,9 +22,9 @@ class User extends Model {
                     values: _.values(ProfileCategory),
                     defaultValue: ProfileCategory.PUBLIC
                 },
-                avatar: DataTypes.STRING,
-                avatarPublicId: DataTypes.STRING,
-                passwordToken: DataTypes.STRING
+                avatar: { type: DataTypes.STRING },
+                avatarPublicId: { type: DataTypes.STRING },
+                passwordToken: { type: DataTypes.STRING }
             },
 
             {
@@ -32,11 +32,10 @@ class User extends Model {
                 timestamps: true,
                 tableName: 'user',
                 hooks: {
-                    beforeCreate: async user => {
-                        user.password = await bcrypt.hash(user.password, 10);
-                    },
                     beforeSave: async user => {
-                        user.password = await bcrypt.hash(user.password, 10);
+                        if (user.changed('password')) {
+                            user.password = await bcrypt.hash(user.password, 10);
+                        }
                     }
                 }
             }
@@ -53,16 +52,6 @@ class User extends Model {
         User.hasMany(models.Attachment, { as: 'attachments', foreignKey: 'userId' });
     }
 
-    generateToken() {
-        const { id, email, role } = this;
-
-        return jwt.sign({ id, email, role }, config.JWT_SECRET, { expiresIn: config.EXPIRES_IN });
-    }
-
-    async comparePassword(password, userPassword) {
-        return await bcrypt.compare(password, userPassword);
-    }
-
     static filtration(filter) {
         const { status, profileCategory, ids } = filter;
 
@@ -76,7 +65,7 @@ class User extends Model {
             filterCondition.profileCategory = profileCategory;
         }
 
-        if (!_.isUndefined(ids)) {
+        if (!_.isEmpty(ids)) {
             filterCondition.id = { [Op.in]: filter.ids };
         }
 
@@ -92,9 +81,20 @@ class User extends Model {
                     'lastname',
                     'avatar',
                     'status',
+                    'profileCategory',
                     [literal(`(SELECT COUNT('*') FROM post WHERE "userId" = "User"."id")::int`), 'postsCount'],
-                    [literal(`(SELECT COUNT('*') FROM follow WHERE "followingId" = "User"."id")::int`), 'followersCount'],
-                    [literal(`(SELECT COUNT('*') FROM follow WHERE "followerId" = "User"."id")::int`), 'followingsCount'],
+                    [
+                        literal(
+                            `(SELECT COUNT('*') FROM follow WHERE "followingId" = "User"."id" and "status" = 'approved')::int`
+                        ),
+                        'followersCount'
+                    ],
+                    [
+                        literal(
+                            `(SELECT COUNT('*') FROM follow WHERE "followerId" = "User"."id" and "status" = 'approved')::int`
+                        ),
+                        'followingsCount'
+                    ],
                     [
                         literal(
                             `(SELECT CASE (SELECT COALESCE((SELECT status FROM follow WHERE "followerId" =
@@ -111,7 +111,7 @@ class User extends Model {
         });
 
         User.addScope('profiles', (userId, filter) => {
-            const filterCondition = this.filtration(filter);
+            const filterCondition = User.filtration(filter);
 
             return {
                 attributes: [
@@ -120,6 +120,7 @@ class User extends Model {
                     'lastname',
                     'avatar',
                     'status',
+                    'profileCategory',
                     [
                         literal(
                             `(SELECT CASE (SELECT COALESCE((SELECT status FROM follow WHERE "followerId" =
@@ -137,7 +138,7 @@ class User extends Model {
         });
 
         User.addScope('followers', (followingId, userId, filter) => {
-            const filterCondition = this.filtration(filter);
+            const filterCondition = User.filtration(filter);
 
             return {
                 attributes: [
@@ -161,13 +162,18 @@ class User extends Model {
                 ],
                 where: {
                     ...filterCondition,
-                    id: { [Op.in]: models.Follow.generateNestedQuery({ attributes: ['followerId'], where: { followingId } }) }
+                    id: {
+                        [Op.in]: models.Follow.generateNestedQuery({
+                            attributes: ['followerId'],
+                            where: { followingId, status: FollowStatus.APPROVED }
+                        })
+                    }
                 }
             };
         });
 
         User.addScope('followings', (followerId, userId, filter) => {
-            const filterCondition = this.filtration(filter);
+            const filterCondition = User.filtration(filter);
 
             return {
                 attributes: [
@@ -191,13 +197,18 @@ class User extends Model {
                 ],
                 where: {
                     ...filterCondition,
-                    id: { [Op.in]: models.Follow.generateNestedQuery({ attributes: ['followingId'], where: { followerId } }) }
+                    id: {
+                        [Op.in]: models.Follow.generateNestedQuery({
+                            attributes: ['followingId'],
+                            where: { followerId, status: FollowStatus.APPROVED }
+                        })
+                    }
                 }
             };
         });
 
         User.addScope('likesUsers', (postId, userId, filter) => {
-            const filterCondition = this.filtration(filter);
+            const filterCondition = User.filtration(filter);
 
             return {
                 attributes: [
@@ -232,17 +243,30 @@ class User extends Model {
                     'id',
                     'firstname',
                     'lastname',
+                    'email',
+                    'role',
                     'avatar',
                     'status',
+                    'profileCategory',
                     [literal(`(SELECT COUNT('*') FROM post WHERE "userId" = "User"."id")::int`), 'postsCount'],
-                    [literal(`(SELECT COUNT('*') FROM follow WHERE "followingId" = "User"."id")::int`), 'followersCount'],
-                    [literal(`(SELECT COUNT('*') FROM follow WHERE "followerId" = "User"."id")::int`), 'followingsCount']
+                    [
+                        literal(
+                            `(SELECT COUNT('*') FROM follow WHERE "followingId" = "User"."id" and "status" = 'approved')::int`
+                        ),
+                        'followersCount'
+                    ],
+                    [
+                        literal(
+                            `(SELECT COUNT('*') FROM follow WHERE "followerId" = "User"."id" and "status" = 'approved')::int`
+                        ),
+                        'followingsCount'
+                    ]
                 ]
             };
         });
 
         User.addScope('usersForAdmin', filter => {
-            const filterCondition = this.filtration(filter);
+            const filterCondition = User.filtration(filter);
 
             return {
                 attributes: [
@@ -253,15 +277,25 @@ class User extends Model {
                     'createdAt',
                     'status',
                     [literal(`(SELECT COUNT('*') FROM post WHERE "userId" = "User"."id")::int`), 'postsCount'],
-                    [literal(`(SELECT COUNT('*') FROM follow WHERE "followingId" = "User"."id")::int`), 'followersCount'],
-                    [literal(`(SELECT COUNT('*') FROM follow WHERE "followerId" = "User"."id")::int`), 'followingsCount']
+                    [
+                        literal(
+                            `(SELECT COUNT('*') FROM follow WHERE "followingId" = "User"."id" and "status" = 'approved')::int`
+                        ),
+                        'followersCount'
+                    ],
+                    [
+                        literal(
+                            `(SELECT COUNT('*') FROM follow WHERE "followerId" = "User"."id" and "status" = 'approved')::int`
+                        ),
+                        'followingsCount'
+                    ]
                 ],
                 where: { ...filterCondition }
             };
         });
 
         User.addScope('exportForAdmin', filter => {
-            const filterCondition = this.filtration(filter);
+            const filterCondition = User.filtration(filter);
 
             return {
                 attributes: [
@@ -271,14 +305,24 @@ class User extends Model {
                     'status',
                     'createdAt',
                     [literal(`(SELECT COUNT('*') FROM post WHERE "userId" = "User"."id")::int`), 'postsCount'],
-                    [literal(`(SELECT COUNT('*') FROM follow WHERE "followingId" = "User"."id")::int`), 'followersCount'],
-                    [literal(`(SELECT COUNT('*') FROM follow WHERE "followerId" = "User"."id")::int`), 'followingsCount']
+                    [
+                        literal(
+                            `(SELECT COUNT('*') FROM follow WHERE "followingId" = "User"."id" and "status" = 'approved')::int`
+                        ),
+                        'followersCount'
+                    ],
+                    [
+                        literal(
+                            `(SELECT COUNT('*') FROM follow WHERE "followerId" = "User"."id" and "status" = 'approved')::int`
+                        ),
+                        'followingsCount'
+                    ]
                 ],
                 where: { ...filterCondition }
             };
         });
 
-        User.addScope('homePage', (lastYear, currentYear) => {
+        User.addScope('statistics', (lastYear, currentYear) => {
             return {
                 attributes: [
                     [literal(`to_char("createdAt", 'Mon') `), 'name'],
@@ -289,6 +333,16 @@ class User extends Model {
                 group: ['name', 'year']
             };
         });
+    }
+
+    generateToken() {
+        const { id, email, role } = this;
+
+        return jwt.sign({ id, email, role }, config.JWT_SECRET, { expiresIn: config.EXPIRES_IN });
+    }
+
+    async comparePassword(password, userPassword) {
+        return await bcrypt.compare(password, userPassword);
     }
 
     toJSON() {

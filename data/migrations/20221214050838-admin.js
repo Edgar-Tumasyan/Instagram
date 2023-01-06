@@ -1,4 +1,3 @@
-const { DataTypes } = require('sequelize');
 module.exports = {
     async up(queryInterface, Sequelize) {
         await queryInterface.createTable('admin', {
@@ -10,8 +9,8 @@ module.exports = {
             avatar: { type: Sequelize.STRING },
             avatarPublicId: { type: Sequelize.STRING },
             passwordToken: { type: Sequelize.STRING },
-            createdAt: { allowNull: false, type: Sequelize.DATE },
-            updatedAt: { allowNull: false, type: Sequelize.DATE }
+            createdAt: { type: Sequelize.DATE, allowNull: false },
+            updatedAt: { type: Sequelize.DATE, allowNull: false }
         });
     },
     async down(queryInterface) {

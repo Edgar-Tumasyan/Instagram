@@ -2,8 +2,8 @@ const _ = require('lodash');
 const { literal } = require('sequelize');
 
 const { Post, Like, User, Follow, Notification, sequelize, generateSearchQuery } = require('../data/models');
+const { NotificationType, ProfileCategory, FollowStatus } = require('../data/lcp');
 const { SortParam, SearchParam, ErrorMessages } = require('../constants');
-const { NotificationType } = require('../data/lcp');
 
 const postLikesUsers = async ctx => {
     const { q, sortType, sortField, status, profileCategory } = ctx.query;
@@ -36,7 +36,7 @@ const create = async ctx => {
     const post = await Post.scope({ method: ['singlePost', userId] }).findByPk(postId);
 
     if (!post) {
-        return ctx.badRequest(ErrorMessages.NO_POST + ` ${postId}`);
+        return ctx.badRequest(ErrorMessages.NOT_FOUND_POST);
     }
 
     const existingLike = await Like.findOne({ where: { postId, userId } });
@@ -45,9 +45,9 @@ const create = async ctx => {
         return ctx.badRequest(ErrorMessages.EXISTING_LIKE);
     }
 
-    if (post.user.profileCategory === 'private' && userId !== post.user.id) {
+    if (post.user.profileCategory === ProfileCategory.PRIVATE && userId !== post.user.id) {
         const allowedLike = await Follow.findOne({
-            where: { followerId: userId, followingId: post.user.id, status: 'approved' }
+            where: { followerId: userId, followingId: post.user.id, status: FollowStatus.APPROVED }
         });
 
         if (!allowedLike) {
@@ -70,23 +70,22 @@ const create = async ctx => {
 };
 
 const remove = async ctx => {
+    const { id: userId } = ctx.state.user;
     const { postId } = ctx.params;
 
     const post = await Post.findByPk(postId);
 
     if (!post) {
-        return ctx.badRequest(ErrorMessages.NO_POST + ` ${postId}`);
+        return ctx.badRequest(ErrorMessages.NOT_FOUND_POST);
     }
-
-    const { id: userId } = ctx.state.user;
 
     const existingLike = await Like.findOne({ where: { postId, userId } });
 
     if (!existingLike) {
-        return ctx.badRequest(ErrorMessages.NO_LIKE);
+        return ctx.badRequest(ErrorMessages.NOT_FOUND_LIKE);
     }
 
-    await Like.destroy({ where: { userId, postId } });
+    await existingLike.destroy();
 
     return ctx.noContent();
 };

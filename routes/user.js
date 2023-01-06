@@ -1,21 +1,23 @@
 const Router = require('koa-router');
 
-const UserController = require('../controllers/UserController');
+const UserHandler = require('../handlers/UserHandler');
 const { auth } = require('../middlewares');
 
 const router = new Router({ prefix: '/users' });
 
-router.get('/', auth, UserController.findAll);
-router.get('/:id', auth, UserController.findOne);
+router.get('/', auth, UserHandler.findAll);
+router.get('/:id', auth, UserHandler.findOne);
 
-router.post('/', UserController.create);
-router.post('/login', UserController.login);
-router.post('/avatar', auth, UserController.uploadAvatar);
-router.post('/reset-password', auth, UserController.resetPassword);
-router.post('/change-password', auth, UserController.changePassword);
-router.post('/forgot-password', auth, UserController.forgotPassword);
-router.post('/change-profile-category', auth, UserController.changeProfileCategory);
+router.post('/', UserHandler.create);
+router.post('/login', UserHandler.login);
 
-router.delete('/', auth, UserController.remove);
+router.put('/', auth, UserHandler.update);
+router.put('/avatar', auth, UserHandler.uploadAvatar);
+router.put('/reset-password', UserHandler.resetPassword);
+router.put('/forgot-password', UserHandler.forgotPassword);
+router.put('/change-password', auth, UserHandler.changePassword);
+router.put('/change-profile-category', auth, UserHandler.changeProfileCategory);
+
+router.delete('/', auth, UserHandler.remove);
 
 module.exports = router;

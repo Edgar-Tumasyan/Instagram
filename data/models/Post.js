@@ -21,12 +21,12 @@ class Post extends Model {
         Post.hasMany(models.Like, { as: 'likes', foreignKey: 'postId' });
     }
 
-    static filtration(filter) {
+    static filtration(filter = {}) {
         const { ids } = filter;
 
         const filterCondition = {};
 
-        if (!_.isUndefined(ids)) {
+        if (!_.isEmpty(ids)) {
             filterCondition.id = { [Op.in]: ids };
         }
 
@@ -48,9 +48,7 @@ class Post extends Model {
                         attributes: ['id', 'firstname', 'lastname'],
                         model: models.User,
                         as: 'user',
-                        where: {
-                            profileCategory: 'public'
-                        }
+                        where: { profileCategory: 'public' }
                     },
                     {
                         attributes: ['id', 'attachmentUrl', 'attachmentPublicId'],
@@ -142,9 +140,9 @@ class Post extends Model {
         });
 
         Post.addScope('mainPosts', userId => {
-            const followedUsers = [
-                literal(`(SELECT id FROM "user" WHERE id in (Select "followingId" from follow where
-                        "followerId" = '${userId}'))`)
+            const users = [
+                literal(`(SELECT id FROM "user" WHERE id in ('${userId}', (Select "followingId" from follow where
+                        "followerId" = '${userId}')))`)
             ];
 
             return {
@@ -156,7 +154,7 @@ class Post extends Model {
                     [literal(`(SELECT COUNT('*') FROM attachment WHERE "postId" = "Post"."id")::int`), 'attachmentsCount']
                 ],
                 include: [
-                    { attributes: ['id', 'firstname', 'lastname'], model: models.User, as: 'user' },
+                    { attributes: ['id', 'firstname', 'lastname', 'profileCategory'], model: models.User, as: 'user' },
                     {
                         attributes: ['id', 'attachmentUrl', 'attachmentPublicId'],
                         model: models.Attachment,
@@ -164,12 +162,12 @@ class Post extends Model {
                         separate: true
                     }
                 ],
-                where: { userId: { [Op.in]: followedUsers } }
+                where: { userId: { [Op.in]: users } }
             };
         });
 
         Post.addScope('postsForAdmin', filter => {
-            const filterCondition = this.filtration(filter);
+            const filterCondition = Post.filtration(filter);
 
             return {
                 attributes: [
@@ -193,7 +191,7 @@ class Post extends Model {
             };
         });
 
-        Post.addScope('homePage', (lastYear, currentYear) => {
+        Post.addScope('statistics', (lastYear, currentYear) => {
             return {
                 attributes: [
                     [literal(`to_char("createdAt", 'Mon') `), 'name'],

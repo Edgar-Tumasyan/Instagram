@@ -3,6 +3,7 @@ const { literal } = require('sequelize');
 
 const { Post, Attachment, User, Follow, sequelize, generateSearchQuery } = require('../data/models');
 const { SortParam, SearchParam, ErrorMessages, ImageType } = require('../constants');
+const { ProfileCategory, FollowStatus } = require('../data/lcp');
 const Cloudinary = require('../components/Cloudinary');
 
 const main = async ctx => {
@@ -53,11 +54,13 @@ const findOne = async ctx => {
     const post = await Post.scope({ method: ['singlePost', followerId] }).findByPk(postId);
 
     if (!post) {
-        return ctx.notFound(ErrorMessages.NO_POST + ` ${postId}`);
+        return ctx.notFound(ErrorMessages.NOT_FOUND_POST);
     }
 
-    if (post.user.profileCategory === 'private' && followerId !== post.user.id) {
-        const allowedPost = await Follow.findOne({ where: { followerId, followingId: post.user.id, status: 'approved' } });
+    if (post.user.profileCategory === ProfileCategory.PRIVATE && followerId !== post.user.id) {
+        const allowedPost = await Follow.findOne({
+            where: { followerId, followingId: post.user.id, status: FollowStatus.APPROVED }
+        });
 
         if (!allowedPost) {
             return ctx.forbidden(ErrorMessages.ALLOWED_POST);
@@ -73,10 +76,12 @@ const getUserPosts = async ctx => {
     const { profileId } = ctx.request.params;
     const { id: userId } = ctx.state.user;
 
-    const user = await User.findByPk(profileId, { raw: true });
+    const user = await User.findByPk(profileId);
 
-    if (user.profileCategory === 'private' && profileId !== userId) {
-        const allowedPosts = await Follow.findOne({ where: { followerId: userId, followingId: profileId, status: 'approved' } });
+    if (user.profileCategory === ProfileCategory.PRIVATE && profileId !== userId) {
+        const allowedPosts = await Follow.findOne({
+            where: { followerId: userId, followingId: profileId, status: FollowStatus.APPROVED }
+        });
 
         if (!allowedPosts) {
             return ctx.forbidden(ErrorMessages.ALLOWED_POST);
@@ -101,12 +106,13 @@ const getUserPosts = async ctx => {
 
 const create = async ctx => {
     const { description, title } = ctx.request.body;
+    const { id: userId } = ctx.state.user;
 
     const postAttachments = _.isArray(ctx.request.files?.attachments)
         ? ctx.request.files.attachments
         : [ctx.request.files?.attachments];
 
-    if (!_.isUndefined(...postAttachments)) {
+    if (!_.isEmpty(...postAttachments)) {
         for (const attachment of postAttachments) {
             if (!ImageType.includes(attachment.ext)) {
                 return ctx.badRequest(ErrorMessages.ATTACHMENT_TYPE);
@@ -114,12 +120,10 @@ const create = async ctx => {
         }
     }
 
-    const { id: userId } = ctx.state.user;
-
     const postId = await sequelize.transaction(async t => {
         const newPost = await Post.create({ description, title, userId }, { transaction: t });
 
-        if (_.isUndefined(...postAttachments)) {
+        if (_.isEmpty(...postAttachments)) {
             return newPost.id;
         }
 
@@ -128,10 +132,12 @@ const create = async ctx => {
         for (const file of postAttachments) {
             const attachment = await Cloudinary.upload(file, 'attachments');
 
-            const attachmentUrl = attachment.secure_url;
-            const attachmentPublicId = attachment.public_id;
-
-            attachments.push({ postId: newPost.id, userId, attachmentUrl, attachmentPublicId });
+            attachments.push({
+                postId: newPost.id,
+                userId,
+                attachmentUrl: attachment.secure_url,
+                attachmentPublicId: attachment.public_id
+            });
         }
 
         await Attachment.bulkCreate(attachments, { transaction: t });
@@ -145,31 +151,29 @@ const create = async ctx => {
 };
 
 const update = async ctx => {
-    const { id: postId } = ctx.request.params;
-
-    const post = await Post.scope({ method: ['expand'] }).findByPk(postId);
-
-    if (!post) {
-        return ctx.notFound(ErrorMessages.NO_POST + `${postId}`);
-    }
-
-    const { id: userId } = ctx.state.user;
-
-    if (post.user.id !== userId) {
-        return ctx.unauthorized(ErrorMessages.POST_UPDATE_PERMISSION);
-    }
-
     const { description, title, deleteAttachments } = ctx.request.body;
+    const { id: postId } = ctx.request.params;
+    const { id: userId } = ctx.state.user;
 
     const newAttachments = _.isArray(ctx.request.files?.attachments)
         ? ctx.request.files.attachments
         : [ctx.request.files?.attachments];
 
-    if (!description && !title && !deleteAttachments && _.isUndefined(...newAttachments)) {
+    const post = await Post.scope({ method: ['expand'] }).findByPk(postId);
+
+    if (!post) {
+        return ctx.notFound(ErrorMessages.NOT_FOUND_POST);
+    }
+
+    if (post.user.id !== userId) {
+        return ctx.unauthorized(ErrorMessages.POST_UPDATE_PERMISSION);
+    }
+
+    if (!description && !title && !deleteAttachments && _.isEmpty(...newAttachments)) {
         return ctx.badRequest(ErrorMessages.UPDATED_VALUES);
     }
 
-    if (!_.isUndefined(...newAttachments)) {
+    if (!_.isEmpty(...newAttachments)) {
         for (const attachment of newAttachments) {
             if (!ImageType.includes(attachment.ext)) {
                 return ctx.badRequest(ErrorMessages.ATTACHMENT_TYPE);
@@ -188,16 +192,18 @@ const update = async ctx => {
 
         await post.save({ transaction: t });
 
-        if (!_.isUndefined(...newAttachments)) {
+        if (!_.isEmpty(...newAttachments)) {
             const attachments = [];
 
             for (const file of newAttachments) {
                 const attachment = await Cloudinary.upload(file, 'attachments');
 
-                const attachmentUrl = attachment.secure_url;
-                const attachmentPublicId = attachment.public_id;
-
-                attachments.push({ postId, userId, attachmentUrl, attachmentPublicId });
+                attachments.push({
+                    postId,
+                    userId,
+                    attachmentUrl: attachment.secure_url,
+                    attachmentPublicId: attachment.public_id
+                });
             }
 
             await Attachment.bulkCreate(attachments, { transaction: t });
@@ -221,14 +227,13 @@ const update = async ctx => {
 
 const remove = async ctx => {
     const { id: postId } = ctx.request.params;
+    const { id: userId } = ctx.state.user;
 
     const post = await Post.findByPk(postId);
 
     if (!post) {
-        return ctx.notFound(ErrorMessages.NO_POST + ` ${postId}`);
+        return ctx.notFound(ErrorMessages.NOT_FOUND_POST);
     }
-
-    const { id: userId } = ctx.state.user;
 
     if (post.userId !== userId) {
         return ctx.unauthorized(ErrorMessages.POST_DELETE_PERMISSION);
@@ -238,13 +243,13 @@ const remove = async ctx => {
 
     if (attachments) {
         for (const attachment of attachments) {
-            await Cloudinary.delete(attachment.dataValues.attachmentPublicId);
+            await Cloudinary.delete(attachment.attachmentPublicId);
 
-            await Attachment.destroy({ where: { id: attachment.dataValues.id } });
+            await Attachment.destroy({ where: { id: attachment.id } });
         }
     }
 
-    await Post.destroy({ where: { id: postId } });
+    await post.destroy();
 
     return ctx.noContent();
 };

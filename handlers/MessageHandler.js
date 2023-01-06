@@ -1,6 +1,10 @@
 const { Follow, Message, Thread, ThreadRequest, ThreadUser, sequelize } = require('../data/models');
 const ErrorMessages = require('../constants/ErrorMessages');
 
+/// findAll threadId messages
+/// / delete message
+/// / update message
+
 const create = async ctx => {
     const { threadId, profileId } = ctx.params;
     const { id: userId } = ctx.state.user;

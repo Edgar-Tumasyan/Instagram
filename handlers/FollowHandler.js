@@ -2,8 +2,8 @@ const _ = require('lodash');
 const { literal } = require('sequelize');
 
 const { Follow, User, Notification, sequelize, generateSearchQuery } = require('../data/models');
+const { FollowStatus, NotificationType, ProfileCategory } = require('../data/lcp');
 const { SortParam, SearchParam, ErrorMessages } = require('../constants');
-const { FollowStatus, NotificationType } = require('../data/lcp');
 
 const getUserFollowers = async ctx => {
     const { q, sortType, sortField, status, profileCategory } = ctx.query;
@@ -61,47 +61,40 @@ const create = async ctx => {
         return ctx.badRequest(ErrorMessages.FOLLOW_PERMISSION);
     }
 
-    const isFollowed = await Follow.findOne({ where: { followerId: userId, followingId: profileId }, raw: true });
+    const user = await User.findByPk(profileId);
 
-    if (isFollowed && isFollowed.status === 'approved') {
-        return ctx.badRequest(ErrorMessages.FOLLOW_APPROVED + ` ${profileId}`);
+    if (!user) {
+        return ctx.notFound(ErrorMessages.NOT_FOUND_USER);
     }
 
-    if (isFollowed && isFollowed.status === 'pending') {
-        return ctx.badRequest(ErrorMessages.FOLLOW_PENDING + ` ${profileId}`);
+    const isFollowed = await Follow.findOne({ where: { followerId: userId, followingId: profileId } });
+
+    if (isFollowed && isFollowed.status === FollowStatus.APPROVED) {
+        return ctx.badRequest(ErrorMessages.FOLLOW_APPROVED);
+    } else if (isFollowed && isFollowed.status === FollowStatus.PENDING) {
+        return ctx.badRequest(ErrorMessages.FOLLOW_PENDING);
     }
 
-    const user = await User.findByPk(profileId, { raw: true });
+    const status = user.profileCategory === ProfileCategory.PRIVATE ? FollowStatus.PENDING : FollowStatus.APPROVED;
 
-    if (user.profileCategory === 'private') {
-        await sequelize.transaction(async t => {
-            const followRequest = await Follow.create(
-                { followerId: userId, followingId: profileId, status: FollowStatus.PENDING },
-                { transaction: t }
-            );
+    const notificationType =
+        user.profileCategory === ProfileCategory.PRIVATE ? NotificationType.User_FOLLOW_REQUEST : NotificationType.USER_FOLLOW;
 
-            await Notification.create(
-                { senderId: userId, receiverId: profileId, followId: followRequest.id, type: NotificationType.USER_FOLLOW },
-                { transaction: t }
-            );
-        });
-
-        return ctx.created({ message: `Your request sent user with id: ${profileId}` });
-    }
+    const message =
+        user.profileCategory === ProfileCategory.PRIVATE
+            ? `Your request sent user with id: ${profileId}`
+            : `You follow user with id ${profileId}`;
 
     await sequelize.transaction(async t => {
-        const follow = await Follow.create(
-            { followerId: userId, followingId: profileId, status: FollowStatus.APPROVED },
-            { raw: true, transaction: t }
-        );
+        const follow = await Follow.create({ followerId: userId, followingId: profileId, status }, { transaction: t });
 
         await Notification.create(
-            { senderId: userId, receiverId: profileId, followId: follow.id, type: NotificationType.USER_FOLLOW },
+            { senderId: userId, receiverId: profileId, followId: follow.id, type: notificationType },
             { transaction: t }
         );
-
-        return ctx.created({ message: `You follow user with id: ${profileId}` });
     });
+
+    return ctx.created({ message });
 };
 
 const acceptFollowInvitation = async ctx => {
@@ -160,10 +153,10 @@ const remove = async ctx => {
     const isFollowed = await Follow.findOne({ where: { followerId: userId, followingId: profileId } });
 
     if (!isFollowed) {
-        return ctx.notFound(ErrorMessages.NO_FOLLOW + ` ${profileId}`);
+        return ctx.notFound(ErrorMessages.NOT_FOUND_FOLLOW);
     }
 
-    await Follow.destroy({ where: { followerId: userId, followingId: profileId } });
+    await isFollowed.destroy();
 
     return ctx.noContent();
 };

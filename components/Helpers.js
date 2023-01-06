@@ -15,7 +15,7 @@ class ExportNormalizer {
         const { USER } = ExportParam;
         const result = [];
 
-        if (_.isUndefined(...data)) {
+        if (_.isEmpty(...data)) {
             const fields = {};
 
             for (const value of Object.values(USER)) {
@@ -50,7 +50,7 @@ class ExportNormalizer {
         const { POST } = ExportParam;
         const result = [];
 
-        if (_.isUndefined(...data)) {
+        if (_.isEmpty(...data)) {
             const fields = {};
 
             for (const value of Object.values(POST)) {
@@ -83,7 +83,7 @@ class ExportNormalizer {
 
         const csvFile = json2csvParser.parse(data);
 
-        const filePath = path.join(`${os.tmpdir()}\\`, `${name}ExportData.csv`);
+        const filePath = path.join(os.tmpdir(), `${name}ExportData.csv`);
 
         fs.writeFileSync(filePath, csvFile);
 
@@ -91,7 +91,7 @@ class ExportNormalizer {
     }
 
     static async jsonToEXCEL(data, name) {
-        const filePath = path.join(`${os.tmpdir()}\\`, `${name}ExportData.xlsx`);
+        const filePath = path.join(os.tmpdir(), `${name}ExportData.xlsx`);
 
         const xls = await json2xls(data);
 
@@ -101,36 +101,38 @@ class ExportNormalizer {
     }
 }
 
-const homePageNormalizer = async homePageData => {
-    const currentYear = {};
-    const lastYear = {};
+const statisticsNormalizer = async statisticsData => {
+    const currentYear = new Date().getFullYear().toString().substring(2);
+
+    const currentYearData = {};
+    const lastYearData = {};
 
     let currentYearTotal = 0;
     let lastYearTotal = 0;
 
-    homePageData.forEach(data => {
-        if (data.year === '22') {
-            currentYear[data.name] = data.month;
+    statisticsData.forEach(data => {
+        if (data.year === currentYear) {
+            currentYearData[data.name] = data.month;
             currentYearTotal += Number(data.month);
         } else {
-            lastYear[data.name] = data.month;
+            lastYearData[data.name] = data.month;
             lastYearTotal += Number(data.month);
         }
     });
 
-    const dataNormalizer = await homePageDataNormalizer(currentYear, lastYear);
+    const dataNormalizer = await statisticsDataNormalizer(currentYearData, lastYearData);
 
     dataNormalizer.push({
-        name: 'YTD',
-        Month: currentYearTotal,
-        'vs PM': 'N/A',
+        Total: 'YTD',
+        Count: currentYearTotal,
+        'vs PM': null,
         'vs PY': Math.ceil(((currentYearTotal - lastYearTotal) * 100) / lastYearTotal)
     });
 
     return dataNormalizer.map(data => data);
 };
 
-const homePageDataNormalizer = async (currentYear, lastYear) => {
+const statisticsDataNormalizer = async (currentYear, lastYear) => {
     const result = [];
 
     for (let i = 1; i < 13; ++i) {
@@ -138,33 +140,33 @@ const homePageDataNormalizer = async (currentYear, lastYear) => {
 
         if (j === 0) {
             result.push({
-                name: HomePageParam[i],
-                Month: Number(currentYear[HomePageParam[i]]) || 'N/A',
+                Month: HomePageParam[i],
+                Count: Number(currentYear[HomePageParam[i]]) || null,
                 'vs PM':
                     Math.ceil(
                         ((Number(currentYear[HomePageParam[i]]) - Number(lastYear[HomePageParam[j]])) * 100) /
                             Number(lastYear[HomePageParam[j]])
-                    ) || 'N/A',
+                    ) || null,
                 'vs PY':
                     Math.ceil(
                         ((Number(currentYear[HomePageParam[i]]) - Number(lastYear[HomePageParam[i]])) * 100) /
                             Number(lastYear[HomePageParam[i]])
-                    ) || 'N/A'
+                    ) || null
             });
         } else {
             result.push({
-                name: HomePageParam[i],
-                Month: Number(currentYear[HomePageParam[i]]) || 'N/A',
+                Month: HomePageParam[i],
+                count: Number(currentYear[HomePageParam[i]]) || null,
                 'vs PM':
                     Math.ceil(
                         ((Number(currentYear[HomePageParam[i]]) - Number(currentYear[HomePageParam[j]])) * 100) /
                             Number(currentYear[HomePageParam[j]])
-                    ) || 'N/A',
+                    ) || null,
                 'vs PY':
                     Math.ceil(
                         ((Number(currentYear[HomePageParam[i]]) - Number(lastYear[HomePageParam[i]])) * 100) /
                             Number(lastYear[HomePageParam[i]])
-                    ) || 'N/A'
+                    ) || null
             });
         }
     }
@@ -188,4 +190,4 @@ const passwordToken = async user => {
     return jwt.sign({ id, email, role }, config.JWT_SECRET_RESET_PASSWORD, { expiresIn: config.EXPIRES_IN_RESET_PASSWORD });
 };
 
-module.exports = { ExportNormalizer, verifyToken, resizeImage, homePageNormalizer, passwordToken };
+module.exports = { ExportNormalizer, verifyToken, resizeImage, statisticsNormalizer, passwordToken };

@@ -6,6 +6,12 @@ module.exports = {
         createdAt: '"User"."createdAt"',
         firstname: '"User"."firstname"'
     },
+    ADMIN: {
+        lastname: '"Admin"."lastname"',
+        default: '"Admin"."createdAt"',
+        createdAt: '"Admin"."createdAt"',
+        firstname: '"Admin"."firstname"'
+    },
     POST: {
         title: '"Post"."title"',
         default: '"Post"."createdAt"',

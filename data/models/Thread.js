@@ -9,6 +9,7 @@ class Thread extends Model {
             {
                 id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true, allowNull: false },
                 type: { type: DataTypes.ENUM, values: _.values(ThreadType), defaultValue: ThreadType.DIRECT },
+                chatName: { type: DataTypes.STRING, validate: { len: { args: [3, 12] } } },
                 lastMessageId: { type: DataTypes.UUID }
             },
             { sequelize, timestamps: true, tableName: 'thread' }

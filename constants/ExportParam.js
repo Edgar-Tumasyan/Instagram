@@ -1,4 +1,5 @@
 module.exports = {
+    TYPE: ['csv', 'excel'],
     USER: {
         firstname: 'First Name',
         lastname: 'Last Name',

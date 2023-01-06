@@ -1,5 +1,3 @@
-const ErrorMessages = require('../constants/ErrorMessages');
-
 module.exports = () => async (ctx, next) => {
     try {
         await next();
@@ -38,7 +36,11 @@ module.exports = () => async (ctx, next) => {
         }
 
         if (err.name === 'SequelizeDatabaseError') {
-            return ctx.unprocessable_entity(ErrorMessages.UNPROCESSABLE_ENTITY);
+            const message = 'Incorrect values';
+
+            errors.push({ message });
+
+            return ctx.unprocessable_entity({ message: 'DatabaseError', errors });
         }
 
         if (err.name === 'TokenExpiredError') {
@@ -47,6 +49,14 @@ module.exports = () => async (ctx, next) => {
             errors.push({ message });
 
             return ctx.unauthorized({ message: 'TokenExpiredError', errors });
+        }
+
+        if (err.name === 'JsonWebTokenError') {
+            const message = 'Invalid token';
+
+            errors.push({ message });
+
+            return ctx.unauthorized({ message: err.name, errors });
         }
 
         return ctx.internalServerError();

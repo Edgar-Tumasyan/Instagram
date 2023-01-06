@@ -1,19 +1,19 @@
 const Router = require('koa-router');
 
-const PostController = require('../controllers/PostController');
+const PostHandler = require('../handlers/PostHandler');
 const { auth } = require('../middlewares');
 
 const router = new Router({ prefix: '/posts' });
 
-router.get('/', auth, PostController.findAll);
-router.get('/main', auth, PostController.main);
-router.get('/:id', auth, PostController.findOne);
-router.get('/profile/:profileId', auth, PostController.getUserPosts);
+router.get('/', auth, PostHandler.findAll);
+router.get('/main', auth, PostHandler.main);
+router.get('/:id', auth, PostHandler.findOne);
+router.get('/profile/:profileId', auth, PostHandler.getUserPosts);
 
-router.post('/', auth, PostController.create);
+router.post('/', auth, PostHandler.create);
 
-router.put('/:id', auth, PostController.update);
+router.put('/:id', auth, PostHandler.update);
 
-router.delete('/:id', auth, PostController.remove);
+router.delete('/:id', auth, PostHandler.remove);
 
 module.exports = router;

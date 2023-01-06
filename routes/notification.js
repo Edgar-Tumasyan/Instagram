@@ -1,10 +1,10 @@
 const Router = require('koa-router');
 
-const NotificationController = require('../controllers/NotificationController');
+const NotificationHandler = require('../handlers/NotificationHandler');
 const auth = require('../middlewares/auth');
 
 const router = new Router({ prefix: '/notifications' });
 
-router.get('/', auth, NotificationController.findAll);
+router.get('/', auth, NotificationHandler.findAll);
 
 module.exports = router;

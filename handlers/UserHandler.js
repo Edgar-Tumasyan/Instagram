@@ -1,4 +1,5 @@
 const _ = require('lodash');
+const validator = require('validator');
 const { literal } = require('sequelize');
 
 const { SearchParam, SortParam, ErrorMessages, ImageType } = require('../constants');
@@ -28,13 +29,17 @@ const findAll = async ctx => {
 };
 
 const findOne = async ctx => {
-    const { id: profileId } = ctx.request.params;
+    let { id: profileId } = ctx.request.params;
     const { id: userId } = ctx.state.user;
+
+    if (profileId === 'me') {
+        profileId = userId;
+    }
 
     const user = await User.scope({ method: ['profile', profileId, userId] }).findByPk(profileId);
 
     if (!user) {
-        return ctx.notFound(ErrorMessages.NO_USER + ` ${profileId}`);
+        return ctx.notFound(ErrorMessages.NOT_FOUND_USER);
     }
 
     return ctx.ok({ user });
@@ -43,9 +48,9 @@ const findOne = async ctx => {
 const create = async ctx => {
     const { firstname, lastname, email, password } = ctx.request.body;
 
-    const newUser = await User.create({ firstname, lastname, email, password });
+    const user = await User.create({ firstname, lastname, email, password });
 
-    return ctx.created({ user: newUser });
+    return ctx.created({ user });
 };
 
 const login = async ctx => {
@@ -64,8 +69,40 @@ const login = async ctx => {
     return ctx.ok({ user, token: user.generateToken() });
 };
 
+const update = async ctx => {
+    const { firstname, lastname, email } = ctx.request.body;
+    const { id } = ctx.state.user;
+
+    if (!firstname && !lastname && !email) {
+        return ctx.badRequest(ErrorMessages.UPDATED_VALUES);
+    }
+
+    const user = await User.scope({ method: ['yourProfile'] }).findByPk(id);
+
+    if (!user) {
+        return ctx.notFound(ErrorMessages.NOT_FOUND_USER);
+    }
+
+    if (firstname) {
+        user.firstname = firstname;
+    }
+
+    if (lastname) {
+        user.lastname = lastname;
+    }
+
+    if (email) {
+        user.email = email;
+    }
+
+    await user.save();
+
+    return ctx.ok({ user });
+};
+
 const uploadAvatar = async ctx => {
     const reqAvatar = ctx.request.files?.avatar;
+    const { id } = ctx.state.user;
 
     if (!reqAvatar) {
         return ctx.badRequest(ErrorMessages.MISSING_AVATAR);
@@ -81,61 +118,49 @@ const uploadAvatar = async ctx => {
 
     const avatar = await Cloudinary.upload(reqAvatar, 'avatars');
 
-    const { id } = ctx.state.user;
-
     await User.update({ avatar: avatar.secure_url, avatarPublicId: avatar.public_id }, { where: { id } });
 
-    const user = await User.scope({ method: ['yourProfile'] }).findByPk(id, { raw: true });
+    const user = await User.scope({ method: ['yourProfile'] }).findByPk(id);
 
     return ctx.created({ user });
 };
 
 const changeProfileCategory = async ctx => {
     const { profileCategory } = ctx.request.body;
+    const { id } = ctx.state.user;
 
     if (!profileCategory) {
         return ctx.badRequest(ErrorMessages.PROFILE_CATEGORY);
     }
 
-    const { id } = ctx.state.user;
-
-    await User.update({ profileCategory }, { where: { id } });
-
     const user = await User.findByPk(id);
+
+    if (!user) {
+        return ctx.notFound(ErrorMessages.NOT_FOUND_USER);
+    }
+
+    user.profileCategory = profileCategory;
+
+    await user.save();
 
     return ctx.ok({ user });
 };
 
-const remove = async ctx => {
-    const { id } = ctx.state.user;
-
-    const user = await User.findByPk(id, { raw: true });
-
-    if (!user) {
-        return ctx.notFound(ErrorMessages.NO_USER + ` ${id}`);
-    }
-
-    if (user.avatar) {
-        await Cloudinary.delete(user.avatarPublicId);
-    }
-
-    await User.destroy({ where: { id } });
-
-    return ctx.noContent();
-};
-
 const forgotPassword = async ctx => {
-    const { email: userEmail } = ctx.state.user;
     const { email } = ctx.request.body;
+
+    if (!email || !validator.isEmail(email)) {
+        return ctx.badRequest(ErrorMessages.FORGOT_PASSWORD_EMAIL);
+    }
 
     const user = await User.findOne({ where: { email } });
 
-    if (!user || email !== userEmail) {
-        return ctx.badRequest(ErrorMessages.FORGOT_PASSWORD_INCORRECT_EMAIL);
+    if (!user) {
+        return ctx.notFound(ErrorMessages.NOT_FOUND_USER);
     }
 
     const passwordToken = await Helpers.passwordToken(user);
-    const resetUrl = `${config.API_URL}/users/reset-password?email=${email}&token=${passwordToken}`;
+    const resetUrl = `${config.API_URL}/api/v1/users/reset-password?email=${email}&token=${passwordToken}`;
 
     await SendEmail(email, config.SENDER_EMAIL, resetUrl, 'Reset Password');
 
@@ -143,6 +168,7 @@ const forgotPassword = async ctx => {
 
     await user.save();
 
+    // return resetUrl only for testing in postman
     return ctx.ok({ message: 'Please check your email for reset password link', resetUrl });
 };
 
@@ -150,16 +176,18 @@ const resetPassword = async ctx => {
     const { password } = ctx.request.body;
     const { email, token } = ctx.query;
 
+    if (!email || !token || !password) {
+        return ctx.badRequest(ErrorMessages.MISSING_VALUES);
+    }
+
     const user = await User.findOne({ where: { email } });
 
-    if (
-        !email ||
-        !token ||
-        !password ||
-        _.isNull(user.dataValues.passwordToken) ||
-        !(await Helpers.verifyToken(token, config.JWT_SECRET_RESET_PASSWORD))
-    ) {
-        return ctx.unauthorized(ErrorMessages.UNPROCESSABLE_ENTITY);
+    if (!user) {
+        return ctx.notFound(ErrorMessages.NOT_FOUND_USER);
+    }
+
+    if (_.isNull(user.passwordToken) || token !== user.passwordToken) {
+        return ctx.badRequest(ErrorMessages.UNPROCESSABLE_ENTITY);
     }
 
     user.password = password;
@@ -180,8 +208,10 @@ const changePassword = async ctx => {
 
     const user = await User.findByPk(id);
 
-    if (!user || !(await user.comparePassword(oldPassword, user.dataValues.password))) {
-        return ctx.notFound(ErrorMessages.INVALID_CREDENTIALS);
+    if (!user) {
+        return ctx.notFound(ErrorMessages.NOT_FOUND_USER);
+    } else if (!(await user.comparePassword(oldPassword, user.password))) {
+        return ctx.badRequest(ErrorMessages.INVALID_OLD_PASSWORD);
     }
 
     user.password = newPassword;
@@ -191,10 +221,29 @@ const changePassword = async ctx => {
     return ctx.created({ user });
 };
 
+const remove = async ctx => {
+    const { id } = ctx.state.user;
+
+    const user = await User.findByPk(id);
+
+    if (!user) {
+        return ctx.notFound(ErrorMessages.NOT_FOUND_USER);
+    }
+
+    if (user.avatar) {
+        await Cloudinary.delete(user.avatarPublicId);
+    }
+
+    await user.destroy();
+
+    return ctx.noContent();
+};
+
 module.exports = {
     login,
     create,
     remove,
+    update,
     findAll,
     findOne,
     uploadAvatar,

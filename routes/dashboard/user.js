@@ -1,17 +1,17 @@
 const Router = require('koa-router');
 
-const UserController = require('../../controllers/dashboard/UserController');
+const UserHandler = require('../../handlers/dashboard/UserHandler');
 const { auth, acl } = require('../../middlewares');
 const { UserRole } = require('../../data/lcp');
 
 const router = new Router({ prefix: '/users' });
 
-router.get('/', auth, acl([UserRole.ADMIN]), UserController.findAll);
+router.get('/', auth, acl([UserRole.ADMIN]), UserHandler.findAll);
 
-router.post('/export-csv', auth, acl([UserRole.ADMIN]), UserController.exportCSV);
-router.post('/export-excel', auth, acl([UserRole.ADMIN]), UserController.exportEXCEL);
-router.post('/activate/:id', auth, acl([UserRole.ADMIN]), UserController.activateUser);
+router.post('/export', auth, acl([UserRole.ADMIN]), UserHandler.exportData);
 
-router.delete('/deactivate/:id', auth, acl([UserRole.ADMIN]), UserController.deactivateUser);
+router.put('/status/:id', auth, acl([UserRole.ADMIN]), UserHandler.updateUserStatus);
+
+router.delete('/:id', auth, acl([UserRole.ADMIN]), UserHandler.remove);
 
 module.exports = router;
