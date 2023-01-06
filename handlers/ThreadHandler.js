@@ -4,11 +4,10 @@ const { Follow, Thread, ThreadRequest, ThreadUser, User, sequelize } = require('
 const ErrorMessages = require('../constants/ErrorMessages');
 const { ThreadType, ThreadStatus } = require('../data/lcp');
 
+/// // delete thread, findOne
 const findAll = async ctx => {
     const { limit, offset, pagination } = ctx.state.paginate;
     const { id: userId } = ctx.state.user;
-
-    /// /// id with body body type and userIds []
 
     const { rows: threads, count: total } = await Thread.scope({
         method: ['allThreads', userId]
@@ -20,7 +19,6 @@ const findAll = async ctx => {
     return ctx.ok({ threads, _meta: pagination(total) });
 };
 
-/// /logic group thread
 const create = async ctx => {
     const { type, chatName, ids } = ctx.request.body;
     const { id: userId } = ctx.state.user;
@@ -40,16 +38,19 @@ const create = async ctx => {
             ? await ThreadRequest.scope({ method: ['existingThread', userId, ids] }).findOne()
             : await ThreadRequest.scope({ method: ['existingChat', chatName, userId] }).findOne();
 
-    /// ///// we have threadId if exist check in direct and continue
+    if (existingThread) {
+        const thread = await Thread.findByPk(existingThread.threadId);
 
-    // if (existingThread) {
-    //     const thread = await Thread.findByPk(existingThread.threadId);
-    //
-    //     return ctx.ok({ thread });
-    // }
+        return ctx.ok({ thread });
+    }
 
-    // in group can get all followings and check with includec
-    // const isFollowed = await Follow.findOne({ where: { followerId: userId, followingId: ids } });
+    const { rows: isFollowed, count } = await Follow.findAndCountAll({
+        where: { followerId: userId, followingId: { [Op.in]: ids } }
+    });
+
+    if (type === ThreadType.GROUP && count < ids.length) {
+        return ctx.notFound(ErrorMessages.GROUP_CHAT_USERS);
+    }
 
     await sequelize.transaction(async t => {
         const thread =
@@ -58,28 +59,19 @@ const create = async ctx => {
                 : await Thread.create({ type, chatName }, { transaction: t });
 
         const threadId = thread.id;
+        const status = type === ThreadType.DIRECT && !isFollowed ? ThreadStatus.PENDING : ThreadStatus.ACCEPTED;
 
-        await ThreadUser.bulkCreate(
-            [
-                { threadId, userId: ids[0] },
-                { threadId, userId: ids[1] },
-                //
-                { threadId, userId: ids[2] }
-            ],
-            { transaction: t }
-        );
+        const threadUsers = [{ threadId, userId }];
+        const threadRequests = [];
 
-        // const status = isFollowed ? ThreadStatus.ACCEPTED : ThreadStatus.PENDING;
+        for (const id of ids) {
+            threadUsers.push({ threadId, userId: id });
+            threadRequests.push({ senderId: userId, receiverId: id, threadId, status });
+        }
 
-        const status = ThreadStatus.ACCEPTED;
+        await ThreadUser.bulkCreate(threadUsers, { transaction: t });
 
-        await ThreadRequest.bulkCreate(
-            [
-                { senderId: userId, receiverId: ids[0], status, threadId },
-                { senderId: userId, receiverId: ids[1], status, threadId }
-            ],
-            { transaction: t }
-        );
+        await ThreadRequest.bulkCreate(threadRequests, { transaction: t });
 
         return ctx.created({ thread });
     });
