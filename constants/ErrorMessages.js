@@ -28,19 +28,25 @@ module.exports = {
     MANY_AVATARS: 'Please choose one photo',
     MISSING_VALUES: 'Please provide all values',
     MISSING_AVATAR: 'Please choose your avatar',
+    MESSAGE_PERMISSION: 'You can update and delete only your messages',
 
     NOT_FOUND_USER: 'User not found',
     NOT_FOUND_POST: 'Post not found',
     NOT_FOUND_ADMIN: 'Admin not found',
+    NOT_FOUND_THREAD: 'Thread not found',
+    NOT_FOUND_MESSAGE: 'Message not found',
     NOT_FOUND_LIKE: `You don't like this post`,
     NOT_FOUND_FOLLOW: `You don't follow this user`,
-    NOT_FOUND_THREAD_USER: 'You or receiver not a user this thread',
+    NOT_FOUND_NOTIFICATION: 'Notification not found',
     NO_CREATE_THREAD: `You can't create thread with your account`,
+    NOT_FOUND_THREAD_USER: 'You or receiver not a user this thread',
 
     POST_VALUES: 'Please provide description and title',
     POST_UPDATE_PERMISSION: 'You can update only your posts',
     POST_DELETE_PERMISSION: 'You can delete only your posts',
     PROFILE_CATEGORY: 'Please choose your profile category that you want to change',
+
+    THREAD_USER_PERMISSION: 'You are not a user this thread',
 
     UPDATED_VALUES: 'No values to updated',
     UNPROCESSABLE_ENTITY: 'Please provide correct values'

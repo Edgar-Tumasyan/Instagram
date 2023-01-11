@@ -17,5 +17,14 @@ module.exports = {
         default: '"Post"."createdAt"',
         createdAt: '"Post"."createdAt"',
         username: 'CONCAT("user"."firstname", "user"."lastname")'
+    },
+    THREAD: {
+        type: '"Thread"."type"',
+        default: '"Thread"."createdAt"',
+        createdAt: '"Thread"."createdAt"'
+    },
+    MESSAGE: {
+        createdAt: '"Message"."createdAt"',
+        default: '"Message"."createdAt"'
     }
 };

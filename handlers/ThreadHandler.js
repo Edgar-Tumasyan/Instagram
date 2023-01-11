@@ -1,22 +1,49 @@
-const { Op } = require('sequelize');
+const { Op, literal } = require('sequelize');
+const _ = require('lodash');
 
-const { Follow, Thread, ThreadRequest, ThreadUser, User, sequelize } = require('../data/models');
+const { Follow, Thread, ThreadRequest, ThreadUser, User, sequelize, generateSearchQuery } = require('../data/models');
 const ErrorMessages = require('../constants/ErrorMessages');
 const { ThreadType, ThreadStatus } = require('../data/lcp');
+const { SortParam, SearchParam } = require('../constants');
 
-/// // delete thread, findOne
 const findAll = async ctx => {
     const { limit, offset, pagination } = ctx.state.paginate;
+    const { q, sortType, sortField } = ctx.query;
     const { id: userId } = ctx.state.user;
+
+    const sortKey = SortParam.THREAD[sortField] ? SortParam.THREAD[sortField] : SortParam.THREAD.default;
+
+    const searchCondition = !_.isEmpty(q) ? generateSearchQuery(q, SearchParam.THREAD) : {};
 
     const { rows: threads, count: total } = await Thread.scope({
         method: ['allThreads', userId]
     }).findAndCountAll({
+        order: [[literal(`${sortKey}`), `${sortType}`]],
+        where: { ...searchCondition },
         offset,
         limit
     });
 
     return ctx.ok({ threads, _meta: pagination(total) });
+};
+
+const findOne = async ctx => {
+    const { threadId } = ctx.request.params;
+    const { id: userId } = ctx.state.user;
+
+    const thread = await Thread.scope({ method: ['thread'] }).findByPk(threadId);
+
+    if (!thread) {
+        return ctx.notFound(ErrorMessages.NOT_FOUND_THREAD);
+    }
+
+    const threadUser = await ThreadUser.findOne({ where: { threadId, userId } });
+
+    if (_.isEmpty(threadUser)) {
+        return ctx.forbidden(ErrorMessages.THREAD_USER_PERMISSION);
+    }
+
+    return ctx.ok({ thread });
 };
 
 const create = async ctx => {
@@ -59,7 +86,7 @@ const create = async ctx => {
                 : await Thread.create({ type, chatName }, { transaction: t });
 
         const threadId = thread.id;
-        const status = type === ThreadType.DIRECT && !isFollowed ? ThreadStatus.PENDING : ThreadStatus.ACCEPTED;
+        const status = type === ThreadType.DIRECT && _.isEmpty(isFollowed) ? ThreadStatus.PENDING : ThreadStatus.ACCEPTED;
 
         const threadUsers = [{ threadId, userId }];
         const threadRequests = [];
@@ -77,4 +104,35 @@ const create = async ctx => {
     });
 };
 
-module.exports = { findAll, create };
+const remove = async ctx => {
+    const { threadId } = ctx.request.params;
+    const { id: userId } = ctx.state.user;
+
+    const thread = await Thread.scope({ method: ['thread'] }).findByPk(threadId);
+
+    if (!thread) {
+        return ctx.notFound(ErrorMessages.NOT_FOUND_THREAD);
+    }
+
+    const threadUser = await ThreadUser.findOne({ where: { threadId, userId } });
+
+    if (_.isEmpty(threadUser)) {
+        return ctx.forbidden(ErrorMessages.THREAD_USER_PERMISSION);
+    }
+
+    if ((thread.type = ThreadType.GROUP)) {
+        const threadCreater = await ThreadRequest.findOne({ where: { threadId, senderId: userId } });
+
+        if (!threadCreater) {
+            await threadUser.destroy();
+
+            return ctx.noContent();
+        }
+    }
+
+    await thread.destroy();
+
+    return ctx.noContent();
+};
+
+module.exports = { findAll, findOne, create, remove };

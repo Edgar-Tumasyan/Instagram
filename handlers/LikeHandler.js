@@ -58,10 +58,12 @@ const create = async ctx => {
     await sequelize.transaction(async t => {
         await Like.create({ userId, postId }, { transaction: t });
 
-        await Notification.create(
-            { type: NotificationType.POST_LIKE, senderId: userId, receiverId: post.user.id, postId },
-            { transaction: t }
-        );
+        if (userId !== post.user.id) {
+            await Notification.create(
+                { type: NotificationType.POST_LIKE, senderId: userId, receiverId: post.user.id, postId },
+                { transaction: t }
+            );
+        }
     });
 
     const data = await Post.scope({ method: ['singlePost', userId] }).findByPk(postId);

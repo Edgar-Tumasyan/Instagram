@@ -103,7 +103,7 @@ const acceptFollowInvitation = async ctx => {
 
     const isFollowed = await Follow.findOne({ where: { followingId, followerId }, raw: true });
 
-    if (!isFollowed || isFollowed.status === 'approved') {
+    if (!isFollowed || isFollowed.status === FollowStatus.APPROVED) {
         return ctx.badRequest(ErrorMessages.FOLLOW_REQUEST);
     }
 
