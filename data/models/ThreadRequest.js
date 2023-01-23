@@ -22,7 +22,7 @@ class ThreadRequest extends Model {
         ThreadRequest.belongsTo(models.Thread, { as: 'threads', foreignKey: 'threadId' });
     }
 
-    static addScopes() {
+    static addScopes(models) {
         ThreadRequest.addScope('existingThread', (userId, profileId) => {
             return {
                 where: {
@@ -31,6 +31,14 @@ class ThreadRequest extends Model {
                         { senderId: profileId, receiverId: userId }
                     ]
                 }
+            };
+        });
+
+        ThreadRequest.addScope('existingChat', (chatName, userId) => {
+            return {
+                attributes: ['threadId'],
+                include: [{ attributes: [], model: models.Thread, as: 'threads', where: { chatName } }],
+                where: { [Op.or]: [{ senderId: userId }, { receiverId: userId }] }
             };
         });
     }

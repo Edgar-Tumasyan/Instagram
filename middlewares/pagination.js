@@ -14,7 +14,13 @@ module.exports = () => async (ctx, next) => {
         offset = 0;
     }
 
-    ctx.state.paginate = { limit, offset };
+    ctx.state.paginate = {
+        limit,
+        offset,
+        pagination: total => {
+            return { total, pageCount: Math.ceil(total / limit), currentPage: Math.ceil((offset + 1) / limit) || 1 };
+        }
+    };
 
     await next();
 };

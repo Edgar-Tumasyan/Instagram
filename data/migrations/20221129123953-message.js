@@ -3,10 +3,10 @@ module.exports = {
         await queryInterface.createTable('message', {
             id: { type: Sequelize.UUID, defaultValue: Sequelize.UUIDV4, primaryKey: true, allowNull: false },
             text: { type: Sequelize.TEXT, allowNull: false },
-            userId: { type: Sequelize.UUID, allowNull: false, references: { model: 'user', key: 'id' }, onDelete: 'Cascade' },
-            threadId: { type: Sequelize.UUID, allowNull: false, references: { model: 'thread', key: 'id' }, onDelete: 'Cascade' },
-            createdAt: { allowNull: false, type: Sequelize.DATE },
-            updatedAt: { allowNull: false, type: Sequelize.DATE }
+            userId: { type: Sequelize.UUID, allowNull: false, references: { model: 'user', key: 'id' } },
+            threadId: { type: Sequelize.UUID, allowNull: false, references: { model: 'thread', key: 'id' } },
+            createdAt: { type: Sequelize.DATE, allowNull: false },
+            updatedAt: { type: Sequelize.DATE, allowNull: false }
         });
 
         await queryInterface.addColumn('thread', 'lastMessageId', {

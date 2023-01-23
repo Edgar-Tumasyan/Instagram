@@ -1,4 +1,4 @@
-const { DataTypes, Model } = require('sequelize');
+const { DataTypes, Model, literal } = require('sequelize');
 
 class Message extends Model {
     static init(sequelize) {
@@ -15,6 +15,12 @@ class Message extends Model {
         Message.belongsTo(models.User, { as: 'user', foreignKey: 'userId' });
 
         Message.belongsTo(models.Thread, { as: 'thread', foreignKey: 'threadId' });
+    }
+
+    static addScopes() {
+        Message.addScope('lastMessage', messageId => {
+            return { where: { createdAt: [literal(`(SELECT MAX("createdAt") from message where id != '${messageId}')`)] } };
+        });
     }
 }
 

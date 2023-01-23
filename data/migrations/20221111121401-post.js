@@ -5,8 +5,8 @@ module.exports = {
             description: { type: Sequelize.STRING, allowNull: false },
             title: { type: Sequelize.STRING, allowNull: false },
             userId: { type: Sequelize.UUID, references: { model: 'user', key: 'id' }, onDelete: 'Cascade' },
-            createdAt: { allowNull: false, type: Sequelize.DATE },
-            updatedAt: { allowNull: false, type: Sequelize.DATE }
+            createdAt: { type: Sequelize.DATE, allowNull: false },
+            updatedAt: { type: Sequelize.DATE, allowNull: false }
         });
     },
     async down(queryInterface) {

@@ -5,11 +5,12 @@ module.exports = {
             firstname: { type: Sequelize.STRING, allowNull: false, validate: { len: { args: [3, 12] } } },
             lastname: { type: Sequelize.STRING, allowNull: false, validate: { len: { args: [3, 12] } } },
             email: { type: Sequelize.STRING, allowNull: false, unique: true, validate: { isEmail: true } },
-            password: { type: Sequelize.STRING, allowNull: false, validate: { len: { args: [6, 14] } } },
+            password: { type: Sequelize.STRING, allowNull: false, validate: { len: { args: [6, 65] } } },
             avatar: { type: Sequelize.STRING },
             avatarPublicId: { type: Sequelize.STRING },
-            createdAt: { allowNull: false, type: Sequelize.DATE },
-            updatedAt: { allowNull: false, type: Sequelize.DATE }
+            passwordToken: { type: Sequelize.STRING },
+            createdAt: { type: Sequelize.DATE, allowNull: false },
+            updatedAt: { type: Sequelize.DATE, allowNull: false }
         });
     },
     async down(queryInterface) {

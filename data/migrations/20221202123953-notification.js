@@ -13,8 +13,8 @@ module.exports = {
             postId: { type: Sequelize.UUID, references: { model: 'post', key: 'id' }, onDelete: 'Cascade' },
             isSeen: { type: Sequelize.BOOLEAN, defaultValue: false },
             isRead: { type: Sequelize.BOOLEAN, defaultValue: false },
-            createdAt: { allowNull: false, type: Sequelize.DATE },
-            updatedAt: { allowNull: false, type: Sequelize.DATE }
+            createdAt: { type: Sequelize.DATE, allowNull: false },
+            updatedAt: { type: Sequelize.DATE, allowNull: false }
         });
     },
     async down(queryInterface) {

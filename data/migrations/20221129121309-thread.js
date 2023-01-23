@@ -7,8 +7,9 @@ module.exports = {
         await queryInterface.createTable('thread', {
             id: { type: Sequelize.UUID, defaultValue: Sequelize.UUIDV4, primaryKey: true, allowNull: false },
             type: { type: Sequelize.ENUM, values: _.values(ThreadType), defaultValue: ThreadType.DIRECT },
-            createdAt: { allowNull: false, type: Sequelize.DATE },
-            updatedAt: { allowNull: false, type: Sequelize.DATE }
+            chatName: { type: Sequelize.STRING, validate: { len: { args: [3, 12] } } },
+            createdAt: { type: Sequelize.DATE, allowNull: false },
+            updatedAt: { type: Sequelize.DATE, allowNull: false }
         });
     },
     async down(queryInterface) {

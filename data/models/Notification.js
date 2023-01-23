@@ -39,11 +39,19 @@ class Notification extends Model {
                 attributes: [
                     [literal(`DISTINCT (CASE type WHEN 'postLike' THEN "postId" ELSE id END )`), 'id'],
                     [literal(`CASE type WHEN 'postLike' THEN "postId" ELSE "followId" END `), 'resourceId'],
+                    // [
+                    //     literal(`CASE type WHEN 'postLike' THEN (SELECT "senderId" FROM notification WHERE
+                    //                    "postId" = (SELECT id FROM post WHERE id = "Notification"."postId")
+                    //                     order by "createdAt")
+                    //                  ELSE "senderId" END`),
+                    //     'senderId'
+                    // ],
+
                     [
                         literal(`CASE type WHEN 'postLike' THEN (SELECT "senderId" FROM notification WHERE
                                        "postId" = (SELECT id FROM post WHERE id = "Notification"."postId") AND
-                                       "createdAt" = (SELECT MAX("createdAt") FROM notification WHERE "postId" = 
-                                       "Notification"."postId")) 
+                                       "createdAt" = (SELECT MAX("createdAt") FROM notification WHERE "postId" =
+                                       "Notification"."postId"))
                                      ELSE "senderId" END`),
                         'senderId'
                     ],
@@ -59,8 +67,8 @@ class Notification extends Model {
                     ],
                     'type'
                 ],
-                where: { receiverId },
                 group: ['id'],
+                where: { receiverId },
                 order: [['createdAt', 'DESC']]
             };
         });

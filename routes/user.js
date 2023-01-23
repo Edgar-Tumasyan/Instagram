@@ -1,18 +1,23 @@
 const Router = require('koa-router');
 
+const UserHandler = require('../handlers/UserHandler');
 const { auth } = require('../middlewares');
-const UserController = require('../controllers/UserController');
 
 const router = new Router({ prefix: '/users' });
 
-router.get('/', auth, UserController.findAll);
-router.get('/:id', auth, UserController.findOne);
+router.get('/', auth, UserHandler.findAll);
+router.get('/:id', auth, UserHandler.findOne);
 
-router.post('/', UserController.create);
-router.post('/login', UserController.login);
-router.post('/avatar', auth, UserController.uploadAvatar);
-router.post('/change-profile-category', auth, UserController.changeProfileCategory);
+router.post('/', UserHandler.create);
+router.post('/login', UserHandler.login);
 
-router.delete('/', auth, UserController.remove);
+router.put('/', auth, UserHandler.update);
+router.put('/avatar', auth, UserHandler.uploadAvatar);
+router.put('/reset-password', UserHandler.resetPassword);
+router.put('/forgot-password', UserHandler.forgotPassword);
+router.put('/change-password', auth, UserHandler.changePassword);
+router.put('/change-profile-category', auth, UserHandler.changeProfileCategory);
+
+router.delete('/', auth, UserHandler.remove);
 
 module.exports = router;

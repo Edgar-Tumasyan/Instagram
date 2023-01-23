@@ -1,3 +1,4 @@
+const _ = require('lodash');
 const { DataTypes, Model, literal, Op } = require('sequelize');
 
 class Post extends Model {
@@ -20,6 +21,18 @@ class Post extends Model {
         Post.hasMany(models.Like, { as: 'likes', foreignKey: 'postId' });
     }
 
+    static filtration(filter = {}) {
+        const { ids } = filter;
+
+        const filterCondition = {};
+
+        if (!_.isEmpty(ids)) {
+            filterCondition.id = { [Op.in]: ids };
+        }
+
+        return filterCondition;
+    }
+
     static addScopes(models) {
         Post.addScope('allPosts', () => {
             return {
@@ -35,9 +48,7 @@ class Post extends Model {
                         attributes: ['id', 'firstname', 'lastname'],
                         model: models.User,
                         as: 'user',
-                        where: {
-                            profileCategory: 'public'
-                        }
+                        where: { profileCategory: 'public' }
                     },
                     {
                         attributes: ['id', 'attachmentUrl', 'attachmentPublicId'],
@@ -59,11 +70,7 @@ class Post extends Model {
                     [literal(`(SELECT COUNT('*') FROM "attachment" WHERE "postId" = "Post"."id")::int`), 'attachmentsCount']
                 ],
                 include: [
-                    {
-                        attributes: ['id', 'firstname', 'lastname'],
-                        model: models.User,
-                        as: 'user'
-                    },
+                    { attributes: ['id', 'firstname', 'lastname'], model: models.User, as: 'user' },
                     {
                         attributes: ['id', 'attachmentUrl', 'attachmentPublicId'],
                         model: models.Attachment,
@@ -133,9 +140,9 @@ class Post extends Model {
         });
 
         Post.addScope('mainPosts', userId => {
-            const followedUsers = [
-                literal(`(SELECT id FROM "user" WHERE id in (Select "followingId" from follow where
-                        "followerId" = '${userId}'))`)
+            const users = [
+                literal(`(SELECT id FROM "user" WHERE id in ('${userId}', (Select "followingId" from follow where
+                        "followerId" = '${userId}')))`)
             ];
 
             return {
@@ -143,6 +150,31 @@ class Post extends Model {
                     'id',
                     'title',
                     'description',
+                    [literal(`(SELECT COUNT('*') FROM "like" WHERE "postId" = "Post"."id")::int`), 'likesCount'],
+                    [literal(`(SELECT COUNT('*') FROM attachment WHERE "postId" = "Post"."id")::int`), 'attachmentsCount']
+                ],
+                include: [
+                    { attributes: ['id', 'firstname', 'lastname', 'profileCategory'], model: models.User, as: 'user' },
+                    {
+                        attributes: ['id', 'attachmentUrl', 'attachmentPublicId'],
+                        model: models.Attachment,
+                        as: 'attachments',
+                        separate: true
+                    }
+                ],
+                where: { userId: { [Op.in]: users } }
+            };
+        });
+
+        Post.addScope('postsForAdmin', filter => {
+            const filterCondition = Post.filtration(filter);
+
+            return {
+                attributes: [
+                    'id',
+                    'title',
+                    'description',
+                    'createdAt',
                     [literal(`(SELECT COUNT('*') FROM "like" WHERE "postId" = "Post"."id")::int`), 'likesCount'],
                     [literal(`(SELECT COUNT('*') FROM attachment WHERE "postId" = "Post"."id")::int`), 'attachmentsCount']
                 ],
@@ -155,7 +187,19 @@ class Post extends Model {
                         separate: true
                     }
                 ],
-                where: { userId: { [Op.in]: followedUsers } }
+                where: { ...filterCondition }
+            };
+        });
+
+        Post.addScope('statistics', (lastYear, currentYear) => {
+            return {
+                attributes: [
+                    [literal(`to_char("createdAt", 'Mon') `), 'name'],
+                    [literal(`to_char("createdAt", 'yy')`), 'year'],
+                    [literal(`Count(*)`), 'month']
+                ],
+                where: { createdAt: { [Op.between]: [`${lastYear}-01-01`, `${currentYear}-12-31`] } },
+                group: ['name', 'year']
             };
         });
     }

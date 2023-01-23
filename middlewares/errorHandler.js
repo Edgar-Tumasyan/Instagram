@@ -1,5 +1,3 @@
-const ErrorMessages = require('../constants/ErrorMessages');
-
 module.exports = () => async (ctx, next) => {
     try {
         await next();
@@ -12,7 +10,9 @@ module.exports = () => async (ctx, next) => {
             const field = err.parent.constraint.split('_')[1];
             const message = `${field} already exist`;
 
-            return ctx.unprocessable_entity({ field, message });
+            errors.push({ field, message });
+
+            return ctx.unprocessable_entity({ message: 'UniqueConstraintError', errors });
         }
 
         if (err.name === 'SequelizeValidationError') {
@@ -36,7 +36,27 @@ module.exports = () => async (ctx, next) => {
         }
 
         if (err.name === 'SequelizeDatabaseError') {
-            return ctx.unprocessable_entity(ErrorMessages.UNPROCESSABLE_ENTITY);
+            const message = 'Incorrect values';
+
+            errors.push({ message });
+
+            return ctx.unprocessable_entity({ message: 'DatabaseError', errors });
+        }
+
+        if (err.name === 'TokenExpiredError') {
+            const message = 'Your token has expired';
+
+            errors.push({ message });
+
+            return ctx.unauthorized({ message: 'TokenExpiredError', errors });
+        }
+
+        if (err.name === 'JsonWebTokenError') {
+            const message = 'Invalid token';
+
+            errors.push({ message });
+
+            return ctx.unauthorized({ message: err.name, errors });
         }
 
         return ctx.internalServerError();
